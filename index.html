@@ -3,111 +3,149 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple ETH Balance Checker</title>
+    <title>ETH Balance Dashboard</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            color: #2c2e2f;
         }
-        .container {
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+        .header {
+            background-color: #fff;
+            border-bottom: 1px solid #eaeced;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px 0;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        #status {
-            margin: 20px 0;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .connected {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .disconnected {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        #balance {
+
+        .logo {
             font-size: 24px;
             font-weight: bold;
-            margin: 20px 0;
+            color: #003087;
         }
+
+        .balance-display {
+            background-color: #fff;
+            padding: 20px 30px;
+            border-bottom: 1px solid #eaeced;
+        }
+
+        .balance-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        #balance {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2c2e2f;
+        }
+
+        .main-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        button {
+            background-color: #0070ba;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #003087;
+        }
+
+        #status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .connected {
+            color: #00a577;
+        }
+
+        .disconnected {
+            color: #c72e2e;
+        }
+
+        .account-section {
+            background-color: #fff;
+            border-radius: 4px;
+            padding: 25px;
+            margin-top: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
         .address {
             word-break: break-all;
             font-size: 14px;
+            color: #666;
+            padding: 10px;
+            background-color: #f7f9fa;
+            border-radius: 4px;
             margin: 10px 0;
-            background-color: #e9ecef;
-            padding: 5px;
-            border-radius: 5px;
         }
-        .info-box {
-            background-color: #fff3cd;
-            color: #856404;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 5px;
-            text-align: left;
+
+        #accountInfo {
+            margin-top: 30px;
         }
-        .info-box h3 {
-            margin-top: 0;
+
+        .section-title {
+            font-size: 20px;
+            color: #2c2e2f;
+            margin-bottom: 15px;
         }
-        .step {
-            margin-bottom: 10px;
+
+        #refreshBtn {
+            background-color: #fff;
+            color: #0070ba;
+            border: 1px solid #0070ba;
+        }
+
+        #refreshBtn:hover {
+            background-color: #f5f7fa;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>ETH Balance Checker</h1>
+    <div class="header">
+        <div class="logo">ETH Dashboard</div>
+        <div id="balance-header"></div>
+    </div>
+
+    <div class="balance-display">
+        <div class="balance-label">Available Balance</div>
+        <div id="balance">-</div>
+    </div>
+
+    <div class="main-content">
+        <div id="status">Welcome to your ETH Dashboard</div>
         
-        <div class="info-box">
-            <h3>⚠️ Important: How to Use This Page</h3>
-            <p>MetaMask requires secure connections to work properly. Follow these steps:</p>
-            
-            <div class="step"><strong>Step 1:</strong> Save this HTML file to your computer</div>
-            <div class="step"><strong>Step 2:</strong> Host it using one of these methods:
-                <ul>
-                    <li>Upload to a web hosting service</li>
-                    <li>Use GitHub Pages</li>
-                    <li>Run a local server with HTTPS (for developers)</li>
-                </ul>
-            </div>
-            <div class="step"><strong>Step 3:</strong> Access the hosted page and then connect your MetaMask</div>
-            
-            <p><strong>Why?</strong> MetaMask requires websites to be served over HTTPS for security. Simply opening this HTML file directly won't work.</p>
-            
-            <p><strong>Quick Solution:</strong> If you know how to use it, run a local server with: <code>npx serve</code> or use tools like XAMPP, MAMP, or Live Server in VS Code.</p>
-        </div>
-        
-        <div id="status">Click the button below to connect to MetaMask</div>
-        
-        <button id="connectBtn">Connect to MetaMask</button>
+        <button id="connectBtn">Connect Wallet</button>
         
         <div id="accountInfo" style="display: none;">
-            <p>Connected Account:</p>
-            <div id="accountAddress" class="address"></div>
-            
-            <p>ETH Balance:</p>
-            <div id="balance">-</div>
-            
-            <button id="refreshBtn">Refresh Balance</button>
+            <div class="section-title">Account Details</div>
+            <div class="account-section">
+                <div class="balance-label">Connected Address</div>
+                <div id="accountAddress" class="address"></div>
+                <button id="refreshBtn">Refresh Balance</button>
+            </div>
         </div>
     </div>
 
