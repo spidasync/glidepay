@@ -257,11 +257,23 @@
             const fetchEthPrice = async (currency) => {
                 try {
                     // Use CoinGecko API to get ETH price in selected currency
-                    const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=${currency.toLowerCase()}`);
+                    const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=${currency.toLowerCase()}&include_last_updated_at=true`);
                     const data = await response.json();
-                    return data.ethereum[currency.toLowerCase()];
+                    
+                    if (data && data.ethereum && data.ethereum[currency.toLowerCase()]) {
+                        // Display the last updated time in status
+                        if (data.ethereum.last_updated_at) {
+                            const lastUpdated = new Date(data.ethereum.last_updated_at * 1000);
+                            statusDiv.textContent = `Connected to MetaMask - Price data updated: ${lastUpdated.toLocaleString()}`;
+                        }
+                        
+                        return data.ethereum[currency.toLowerCase()];
+                    } else {
+                        throw new Error('Invalid price data format');
+                    }
                 } catch (error) {
                     console.error('Error fetching ETH price:', error);
+                    statusDiv.textContent = 'Connected to MetaMask - Unable to fetch latest price data';
                     return null;
                 }
             };
@@ -271,25 +283,24 @@
                 const selectedCurrency = currencySelect.value;
                 currencyCodeDiv.textContent = selectedCurrency;
                 
-                if (currentEthBalance > 0) {
-                    const ethPrice = await fetchEthPrice(selectedCurrency);
-                    if (ethPrice) {
-                        const currencyBalance = currentEthBalance * ethPrice;
-                        
-                        // Format the currency based on locale
-                        const formatter = new Intl.NumberFormat(undefined, {
-                            style: 'currency',
-                            currency: selectedCurrency,
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                        });
-                        
-                        currencyBalanceDiv.textContent = formatter.format(currencyBalance);
-                    } else {
-                        currencyBalanceDiv.textContent = 'Price data unavailable';
-                    }
+                // Always fetch the current ETH price regardless of balance
+                const ethPrice = await fetchEthPrice(selectedCurrency);
+                
+                if (ethPrice) {
+                    // Calculate currency balance (even if ETH is 0)
+                    const currencyBalance = currentEthBalance * ethPrice;
+                    
+                    // Format the currency based on locale
+                    const formatter = new Intl.NumberFormat(undefined, {
+                        style: 'currency',
+                        currency: selectedCurrency,
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                    
+                    currencyBalanceDiv.textContent = formatter.format(currencyBalance);
                 } else {
-                    currencyBalanceDiv.textContent = '-';
+                    currencyBalanceDiv.textContent = 'Price data unavailable';
                 }
             };
             
@@ -400,7 +411,15 @@
                         // Convert wei to ETH (1 ETH = 10^18 wei)
                         const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
                         currentEthBalance = ethBalance;
-                        ethBalanceDiv.textContent = ethBalance.toFixed(4) + ' ETH';
+                        
+                        // Format ETH with appropriate precision based on amount
+                        if (ethBalance === 0) {
+                            ethBalanceDiv.textContent = '0.0000 ETH';
+                        } else if (ethBalance < 0.0001) {
+                            ethBalanceDiv.textContent = ethBalance.toFixed(8) + ' ETH';
+                        } else {
+                            ethBalanceDiv.textContent = ethBalance.toFixed(4) + ' ETH';
+                        }
                         
                         // Update currency balance
                         updateCurrencyBalance();
