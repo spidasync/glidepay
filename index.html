@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ETH Balance Dashboard</title>
+    <title>Multi-Currency ETH Dashboard</title>
     <style>
+        :root {
+            --paypal-blue: #0070ba;
+            --paypal-dark-blue: #003087;
+            --border-color: #eaeced;
+            --text-color: #2c2e2f;
+            --secondary-text: #666;
+            --background-light: #f7f9fa;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #fff;
-            color: #2c2e2f;
+            color: var(--text-color);
         }
 
         .header {
             background-color: #fff;
-            border-bottom: 1px solid #eaeced;
+            border-bottom: 1px solid var(--border-color);
             padding: 15px 30px;
             display: flex;
             justify-content: space-between;
@@ -26,35 +35,74 @@
         .logo {
             font-size: 24px;
             font-weight: bold;
-            color: #003087;
+            color: var(--paypal-dark-blue);
         }
 
-        .balance-display {
+        .currency-selector {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            color: var(--text-color);
             background-color: #fff;
-            padding: 20px 30px;
-            border-bottom: 1px solid #eaeced;
+            cursor: pointer;
+        }
+
+        .balance-container {
+            background-color: #fff;
+            padding: 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .balance-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .balance-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         .balance-label {
-            color: #666;
+            color: var(--secondary-text);
             font-size: 14px;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
-        #balance {
+        .balance-amount {
             font-size: 32px;
             font-weight: bold;
-            color: #2c2e2f;
+            color: var(--text-color);
+        }
+
+        .balance-secondary {
+            color: var(--secondary-text);
+            font-size: 16px;
+            margin-top: 5px;
         }
 
         .main-content {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 30px;
         }
 
         button {
-            background-color: #0070ba;
+            background-color: var(--paypal-blue);
             color: white;
             border: none;
             padding: 12px 30px;
@@ -66,7 +114,7 @@
         }
 
         button:hover {
-            background-color: #003087;
+            background-color: var(--paypal-dark-blue);
         }
 
         #status {
@@ -86,56 +134,107 @@
 
         .account-section {
             background-color: #fff;
-            border-radius: 4px;
+            border-radius: 8px;
             padding: 25px;
             margin-top: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid var(--border-color);
         }
 
         .address {
             word-break: break-all;
             font-size: 14px;
-            color: #666;
+            color: var(--secondary-text);
             padding: 10px;
-            background-color: #f7f9fa;
+            background-color: var(--background-light);
             border-radius: 4px;
             margin: 10px 0;
         }
 
-        #accountInfo {
-            margin-top: 30px;
-        }
-
         .section-title {
             font-size: 20px;
-            color: #2c2e2f;
+            color: var(--text-color);
             margin-bottom: 15px;
         }
 
         #refreshBtn {
             background-color: #fff;
-            color: #0070ba;
-            border: 1px solid #0070ba;
+            color: var(--paypal-blue);
+            border: 1px solid var(--paypal-blue);
         }
 
         #refreshBtn:hover {
-            background-color: #f5f7fa;
+            background-color: var(--background-light);
+        }
+
+        .currency-rates {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: var(--background-light);
+            border-radius: 8px;
+        }
+
+        .rate-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .rate-item {
+            background: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <div class="logo">ETH Dashboard</div>
-        <div id="balance-header"></div>
+        <div class="logo">Multi-Currency ETH Dashboard</div>
+        <div class="currency-selector">
+            <label for="currency-select">Display Currency:</label>
+            <select id="currency-select">
+                <option value="USD">USD - US Dollar</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="GBP">GBP - British Pound</option>
+                <option value="JPY">JPY - Japanese Yen</option>
+                <option value="AUD">AUD - Australian Dollar</option>
+                <option value="CAD">CAD - Canadian Dollar</option>
+                <option value="CHF">CHF - Swiss Franc</option>
+                <option value="CNY">CNY - Chinese Yuan</option>
+                <option value="SEK">SEK - Swedish Krona</option>
+                <option value="NZD">NZD - New Zealand Dollar</option>
+                <option value="KRW">KRW - South Korean Won</option>
+                <option value="SGD">SGD - Singapore Dollar</option>
+                <option value="NOK">NOK - Norwegian Krone</option>
+                <option value="MXN">MXN - Mexican Peso</option>
+                <option value="INR">INR - Indian Rupee</option>
+                <option value="RUB">RUB - Russian Ruble</option>
+                <option value="ZAR">ZAR - South African Rand</option>
+                <option value="TRY">TRY - Turkish Lira</option>
+                <option value="BRL">BRL - Brazilian Real</option>
+                <option value="HKD">HKD - Hong Kong Dollar</option>
+            </select>
+        </div>
     </div>
 
-    <div class="balance-display">
-        <div class="balance-label">Available Balance</div>
-        <div id="balance">-</div>
+    <div class="balance-container">
+        <div class="balance-grid">
+            <div class="balance-card">
+                <div class="balance-label">ETH Balance</div>
+                <div id="eth-balance" class="balance-amount">-</div>
+            </div>
+            <div class="balance-card">
+                <div class="balance-label">Currency Balance</div>
+                <div id="currency-balance" class="balance-amount">-</div>
+                <div id="currency-code" class="balance-secondary">USD</div>
+            </div>
+        </div>
     </div>
 
     <div class="main-content">
-        <div id="status">Welcome to your ETH Dashboard</div>
+        <div id="status">Welcome to your Multi-Currency ETH Dashboard</div>
         
         <button id="connectBtn">Connect Wallet</button>
         
@@ -146,161 +245,10 @@
                 <div id="accountAddress" class="address"></div>
                 <button id="refreshBtn">Refresh Balance</button>
             </div>
+            
+            <div class="currency-rates">
+                <div class="section-title">Current Exchange Rates</div>
+                <div class="rate-grid" id="rateGrid"></div>
+            </div>
         </div>
     </div>
-
-    <script>
-        // Run immediately and also when DOM content is loaded
-        const initApp = function() {
-            const connectBtn = document.getElementById('connectBtn');
-            const refreshBtn = document.getElementById('refreshBtn');
-            const statusDiv = document.getElementById('status');
-            const accountInfo = document.getElementById('accountInfo');
-            const accountAddress = document.getElementById('accountAddress');
-            const balanceDiv = document.getElementById('balance');
-            
-            // Connect to MetaMask - this is the main function that tries various methods
-            const connectMetaMask = async () => {
-                statusDiv.textContent = 'Attempting to connect to MetaMask...';
-                
-                try {
-                    // Try multiple ways to connect to MetaMask
-                    let accounts;
-                    
-                    // Method 1: Modern window.ethereum
-                    if (window.ethereum) {
-                        try {
-                            accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                        } catch (err) {
-                            console.log('Method 1 failed:', err);
-                        }
-                    }
-                    
-                    // Method 2: Legacy web3
-                    if (!accounts && window.web3 && window.web3.eth && window.web3.eth.accounts) {
-                        try {
-                            accounts = await new Promise((resolve) => {
-                                window.web3.eth.getAccounts((err, accts) => {
-                                    resolve(accts || []);
-                                });
-                            });
-                        } catch (err) {
-                            console.log('Method 2 failed:', err);
-                        }
-                    }
-                    
-                    // Method 3: Try to force MetaMask to inject by requesting eth_accounts
-                    if (!accounts) {
-                        try {
-                            // This often triggers the MetaMask extension to inject itself
-                            if (window.ethereum) {
-                                accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                            }
-                        } catch (err) {
-                            console.log('Method 3 failed:', err);
-                        }
-                    }
-                    
-                    // Check if we got accounts
-                    if (accounts && accounts.length > 0) {
-                        const account = accounts[0];
-                        
-                        statusDiv.textContent = 'Connected to MetaMask';
-                        statusDiv.className = 'connected';
-                        accountInfo.style.display = 'block';
-                        accountAddress.textContent = account;
-                        connectBtn.style.display = 'none';
-                        
-                        // Get initial balance
-                        getBalance(account);
-                        
-                        // Setup account change listener
-                        if (window.ethereum) {
-                            window.ethereum.on('accountsChanged', function (accounts) {
-                                if (accounts.length === 0) {
-                                    // Disconnected
-                                    resetUI();
-                                } else {
-                                    // Account changed
-                                    const newAccount = accounts[0];
-                                    accountAddress.textContent = newAccount;
-                                    getBalance(newAccount);
-                                }
-                            });
-                        }
-                    } else {
-                        // If we still don't have accounts, direct the user
-                        statusDiv.textContent = 'MetaMask connection failed. Make sure you are using a proper web server (not just opening the file locally).';
-                        statusDiv.className = 'disconnected';
-                    }
-                } catch (error) {
-                    console.error('Connection error:', error);
-                    statusDiv.textContent = 'Error connecting to MetaMask. Please make sure this page is served over HTTP/HTTPS, not opened as a local file.';
-                    statusDiv.className = 'disconnected';
-                }
-            };
-            
-            // Get ETH balance
-            const getBalance = async (account) => {
-                try {
-                    let balance;
-                    
-                    // Try multiple methods to get balance
-                    if (window.ethereum) {
-                        balance = await window.ethereum.request({
-                            method: 'eth_getBalance',
-                            params: [account, 'latest']
-                        });
-                    } else if (window.web3 && window.web3.eth) {
-                        balance = await new Promise((resolve) => {
-                            window.web3.eth.getBalance(account, (err, result) => {
-                                resolve(result ? result.toString(16) : null);
-                            });
-                        });
-                    }
-                    
-                    if (balance) {
-                        // Convert wei to ETH (1 ETH = 10^18 wei)
-                        const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
-                        balanceDiv.textContent = ethBalance.toFixed(4) + ' ETH';
-                    } else {
-                        balanceDiv.textContent = 'Unable to fetch balance';
-                    }
-                } catch (error) {
-                    console.error('Balance error:', error);
-                    balanceDiv.textContent = 'Error fetching balance';
-                }
-            };
-            
-            // Reset UI when disconnected
-            const resetUI = () => {
-                statusDiv.textContent = 'Disconnected from MetaMask';
-                statusDiv.className = 'disconnected';
-                accountInfo.style.display = 'none';
-                connectBtn.style.display = 'block';
-            };
-            
-            // Event listeners
-            connectBtn.addEventListener('click', connectMetaMask);
-            refreshBtn.addEventListener('click', () => {
-                const account = accountAddress.textContent;
-                if (account) {
-                    getBalance(account);
-                }
-            });
-            
-            // Initial UI setup
-            statusDiv.textContent = 'Click the button below to connect to MetaMask';
-        };
-        
-        // Run immediately
-        initApp();
-        
-        // Also run when DOM is fully loaded (as a fallback)
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-</body>
-</html>
-    </script>
-</body>
-</html>
