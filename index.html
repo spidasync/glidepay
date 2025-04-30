@@ -1049,7 +1049,15 @@
                     paymentRequestModal.style.display = 'flex';
                     
                     // Handle approve payment
-                    approvePaymentBtn.addEventListener('click', () => {
+                    // Handle approve payment - modified to connect wallet automatically if needed
+                    approvePaymentBtn.addEventListener('click', async () => {
+                        if (!currentAccount) {
+                            // Connect wallet first, then proceed with payment
+                            statusDiv.textContent = 'Connecting wallet to process payment...';
+                            await connectMetaMask();
+                        }
+                        
+                        // Now check if connection was successful
                         if (currentAccount) {
                             paymentRequestModal.style.display = 'none';
                             sendTo.value = recipient;
@@ -1057,8 +1065,8 @@
                             if (note) sendNote.value = note;
                             sendForm.style.display = 'block';
                         } else {
-                            alert('Please connect your wallet first');
-                            connectMetaMask();
+                            // Still not connected, show a more helpful message
+                            alert('Unable to connect to your wallet. Please make sure MetaMask is installed and unlocked.');
                         }
                     });
                     
