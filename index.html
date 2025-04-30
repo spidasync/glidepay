@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multi-Currency ETH Dashboard</title>
+    <title>PayWeave</title>
     <style>
         :root {
             --paypal-blue: #0070ba;
@@ -17,7 +17,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: Futura, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
             padding: 0;
             background-color: #fff;
@@ -363,7 +363,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">Multi-Currency ETH Dashboard</div>
+        <div class="logo">PayWeave</div>
         <div class="currency-selector">
             <label for="currency-select">Display Currency:</label>
             <select id="currency-select">
@@ -924,18 +924,15 @@
             };
             
             // Create a request payment link
+            <!-- Modify the createRequestLink function -->
             const createRequestLink = (recipient, amount, note) => {
-                // In a real app, you would create a proper deep link or use a service
-                // This is a simplified version that creates a link with parameters
-                
                 const params = new URLSearchParams();
                 params.append('to', recipient);
                 params.append('amount', amount);
                 if (note) params.append('note', note);
                 
-                // Create a reference link that in a real app would be handled by a proper back-end
                 const baseUrl = window.location.origin + window.location.pathname;
-                return `${baseUrl}?action=pay&${params.toString()}`;
+                return `${baseUrl}?action=request&${params.toString()}`;
             };
             
             // Copy text to clipboard
@@ -1011,22 +1008,23 @@
             };
             
             // Check URL for request parameters
+            <!-- Update checkURLParameters function -->
             const checkURLParameters = () => {
                 const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('action') === 'pay') {
+                if (urlParams.get('action') === 'request') {
                     const recipient = urlParams.get('to');
                     const amount = urlParams.get('amount');
                     const note = urlParams.get('note');
                     
                     if (recipient && amount) {
-                        // Auto-fill the send form
-                        sendTo.value = recipient;
-                        sendAmount.value = amount;
-                        if (note) sendNote.value = note;
+                        const message = `Someone has requested ${amount} ETH from you`;
+                        alert(message);
                         
-                        // Show the form if we have a wallet connection
                         if (currentAccount) {
                             hideAllForms();
+                            sendTo.value = recipient;
+                            sendAmount.value = amount;
+                            if (note) sendNote.value = note;
                             sendForm.style.display = 'block';
                         }
                     }
