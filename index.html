@@ -252,3 +252,160 @@
             </div>
         </div>
     </div>
+
+    
+    <script>
+        // Run immediately and also when DOM content is loaded
+        const initApp = function() {
+            const connectBtn = document.getElementById('connectBtn');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const statusDiv = document.getElementById('status');
+            const accountInfo = document.getElementById('accountInfo');
+            const accountAddress = document.getElementById('accountAddress');
+            const balanceDiv = document.getElementById('balance');
+            
+            // Connect to MetaMask - this is the main function that tries various methods
+            const connectMetaMask = async () => {
+                statusDiv.textContent = 'Attempting to connect to MetaMask...';
+                
+                try {
+                    // Try multiple ways to connect to MetaMask
+                    let accounts;
+                    
+                    // Method 1: Modern window.ethereum
+                    if (window.ethereum) {
+                        try {
+                            accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                        } catch (err) {
+                            console.log('Method 1 failed:', err);
+                        }
+                    }
+                    
+                    // Method 2: Legacy web3
+                    if (!accounts && window.web3 && window.web3.eth && window.web3.eth.accounts) {
+                        try {
+                            accounts = await new Promise((resolve) => {
+                                window.web3.eth.getAccounts((err, accts) => {
+                                    resolve(accts || []);
+                                });
+                            });
+                        } catch (err) {
+                            console.log('Method 2 failed:', err);
+                        }
+                    }
+                    
+                    // Method 3: Try to force MetaMask to inject by requesting eth_accounts
+                    if (!accounts) {
+                        try {
+                            // This often triggers the MetaMask extension to inject itself
+                            if (window.ethereum) {
+                                accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                            }
+                        } catch (err) {
+                            console.log('Method 3 failed:', err);
+                        }
+                    }
+                    
+                    // Check if we got accounts
+                    if (accounts && accounts.length > 0) {
+                        const account = accounts[0];
+                        
+                        statusDiv.textContent = 'Connected to MetaMask';
+                        statusDiv.className = 'connected';
+                        accountInfo.style.display = 'block';
+                        accountAddress.textContent = account;
+                        connectBtn.style.display = 'none';
+                        
+                        // Get initial balance
+                        getBalance(account);
+                        
+                        // Setup account change listener
+                        if (window.ethereum) {
+                            window.ethereum.on('accountsChanged', function (accounts) {
+                                if (accounts.length === 0) {
+                                    // Disconnected
+                                    resetUI();
+                                } else {
+                                    // Account changed
+                                    const newAccount = accounts[0];
+                                    accountAddress.textContent = newAccount;
+                                    getBalance(newAccount);
+                                }
+                            });
+                        }
+                    } else {
+                        // If we still don't have accounts, direct the user
+                        statusDiv.textContent = 'MetaMask connection failed. Make sure you are using a proper web server (not just opening the file locally).';
+                        statusDiv.className = 'disconnected';
+                    }
+                } catch (error) {
+                    console.error('Connection error:', error);
+                    statusDiv.textContent = 'Error connecting to MetaMask. Please make sure this page is served over HTTP/HTTPS, not opened as a local file.';
+                    statusDiv.className = 'disconnected';
+                }
+            };
+            
+            // Get ETH balance
+            const getBalance = async (account) => {
+                try {
+                    let balance;
+                    
+                    // Try multiple methods to get balance
+                    if (window.ethereum) {
+                        balance = await window.ethereum.request({
+                            method: 'eth_getBalance',
+                            params: [account, 'latest']
+                        });
+                    } else if (window.web3 && window.web3.eth) {
+                        balance = await new Promise((resolve) => {
+                            window.web3.eth.getBalance(account, (err, result) => {
+                                resolve(result ? result.toString(16) : null);
+                            });
+                        });
+                    }
+                    
+                    if (balance) {
+                        // Convert wei to ETH (1 ETH = 10^18 wei)
+                        const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
+                        balanceDiv.textContent = ethBalance.toFixed(4) + ' ETH';
+                    } else {
+                        balanceDiv.textContent = 'Unable to fetch balance';
+                    }
+                } catch (error) {
+                    console.error('Balance error:', error);
+                    balanceDiv.textContent = 'Error fetching balance';
+                }
+            };
+            
+            // Reset UI when disconnected
+            const resetUI = () => {
+                statusDiv.textContent = 'Disconnected from MetaMask';
+                statusDiv.className = 'disconnected';
+                accountInfo.style.display = 'none';
+                connectBtn.style.display = 'block';
+            };
+            
+            // Event listeners
+            connectBtn.addEventListener('click', connectMetaMask);
+            refreshBtn.addEventListener('click', () => {
+                const account = accountAddress.textContent;
+                if (account) {
+                    getBalance(account);
+                }
+            });
+            
+            // Initial UI setup
+            statusDiv.textContent = 'Click the button below to connect to MetaMask';
+        };
+        
+        // Run immediately
+        initApp();
+        
+        // Also run when DOM is fully loaded (as a fallback)
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
+    </script>
+</body>
+</html>
