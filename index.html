@@ -16,6 +16,40 @@
             --currency-green: #00a577;
         }
 
+        .payment-request-details {
+            padding: 20px 0;
+            text-align: center;
+        }
+        
+        .request-message {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+        
+        .request-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--eth-blue);
+            margin: 20px 0;
+        }
+        
+        .request-note {
+            font-size: 16px;
+            color: var(--secondary-text);
+            font-style: italic;
+            margin: 15px 0;
+            padding: 10px;
+            background: var(--background-light);
+            border-radius: 4px;
+        }
+        
+        #requesterAddress {
+            font-weight: bold;
+            color: var(--eth-blue);
+        }
+
+
         body {
             font-family: Futura, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
@@ -1008,28 +1042,64 @@
             };
             
             // Check URL for request parameters
-            <!-- Update checkURLParameters function -->
             const checkURLParameters = () => {
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('action') === 'request') {
-                    const recipient = urlParams.get('to');
-                    const amount = urlParams.get('amount');
-                    const note = urlParams.get('note');
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'request') {
+                const recipient = urlParams.get('to');
+                const amount = urlParams.get('amount');
+                const note = urlParams.get('note');
+                
+                if (recipient && amount) {
+                    const paymentRequestModal = document.getElementById('paymentRequestModal');
+                    const requesterAddress = document.getElementById('requesterAddress');
+                    const requestedAmount = document.getElementById('requestedAmount');
+                    const requestNoteElement = document.getElementById('requestNote');
+                    const approvePaymentBtn = document.getElementById('approvePaymentBtn');
+                    const declinePaymentBtn = document.getElementById('declinePaymentBtn');
                     
-                    if (recipient && amount) {
-                        const message = `Someone has requested ${amount} ETH from you`;
-                        alert(message);
-                        
+                    // Display the request details
+                    requesterAddress.textContent = recipient;
+                    requestedAmount.textContent = `${amount} ETH`;
+                    requestNoteElement.textContent = note || 'No note provided';
+                    
+                    // Show the modal
+                    paymentRequestModal.style.display = 'flex';
+                    
+                    // Handle approve payment
+                    approvePaymentBtn.addEventListener('click', () => {
                         if (currentAccount) {
-                            hideAllForms();
+                            paymentRequestModal.style.display = 'none';
                             sendTo.value = recipient;
                             sendAmount.value = amount;
                             if (note) sendNote.value = note;
                             sendForm.style.display = 'block';
+                        } else {
+                            alert('Please connect your wallet first');
+                            connectMetaMask();
                         }
-                    }
+                    });
+                    
+                    // Handle decline payment
+                    declinePaymentBtn.addEventListener('click', () => {
+                        paymentRequestModal.style.display = 'none';
+                    });
+                    
+                    // Close modal when clicking X
+                    const closeBtn = paymentRequestModal.querySelector('.close-modal');
+                    closeBtn.addEventListener('click', () => {
+                        paymentRequestModal.style.display = 'none';
+                    });
+                    
+                    // Close modal when clicking outside
+                    window.addEventListener('click', (e) => {
+                        if (e.target === paymentRequestModal) {
+                            paymentRequestModal.style.display = 'none';
+                        }
+                    });
                 }
-            };
+            }
+        };
+
             
             // Hide all forms
             const hideAllForms = () => {
@@ -1148,5 +1218,26 @@
         // Also run when DOM is fully loaded (as a fallback)
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
+
+    <div id="paymentRequestModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="modal-title">Payment Request</div>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="payment-request-details">
+            <div class="request-message">
+                <span id="requesterAddress"></span> has requested:
+            </div>
+            <div class="request-amount" id="requestedAmount"></div>
+            <div class="request-note" id="requestNote"></div>
+        </div>
+        <div class="form-footer">
+            <button id="declinePaymentBtn" class="cancel-btn">Decline</button>
+            <button id="approvePaymentBtn">Pay Now</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
