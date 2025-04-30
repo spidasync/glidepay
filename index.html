@@ -844,4 +844,311 @@
                         const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
                         currentEthBalance = ethBalance;
                         
-                        // Format ETH with appropriate precision base
+                        // Format ETH with appropriate precision based on amount
+                        if (ethBalance === 0) {
+                            ethBalanceDiv.textContent = '0.0000 ETH';
+                        } else if (ethBalance < 0.0001) {
+                            ethBalanceDiv.textContent = ethBalance.toFixed(8) + ' ETH';
+                        } else {
+                            ethBalanceDiv.textContent = ethBalance.toFixed(4) + ' ETH';
+                        }
+                        
+                        // Update currency balance
+                        updateCurrencyBalance();
+                    } else {
+                        ethBalanceDiv.textContent = 'Unable to fetch balance';
+                        currencyBalanceDiv.textContent = '-';
+                    }
+                } catch (error) {
+                    console.error('Balance error:', error);
+                    ethBalanceDiv.textContent = 'Error fetching balance';
+                    currencyBalanceDiv.textContent = '-';
+                }
+            };
+            
+            // Reset UI when disconnected
+            const resetUI = () => {
+                statusDiv.textContent = 'Disconnected from MetaMask';
+                statusDiv.className = 'disconnected';
+                accountInfo.style.display = 'none';
+                connectBtn.style.display = 'block';
+                ethBalanceDiv.textContent = '-';
+                currencyBalanceDiv.textContent = '-';
+                currentEthBalance = 0;
+                currentAccount = null;
+            };
+            
+            // Send ETH function
+            const sendEth = async (recipient, amount, note) => {
+                if (!window.ethereum) {
+                    showError("MetaMask not found. Please install MetaMask to send ETH.");
+                    return false;
+                }
+                
+                try {
+                    // Convert ETH to Wei
+                    const amountWei = "0x" + (amount * Math.pow(10, 18)).toString(16);
+                    
+                    // Create the transaction
+                    const transactionParameters = {
+                        to: recipient,
+                        from: currentAccount,
+                        value: amountWei,
+                        // Optional: Include gas parameters
+                        // gas: '',
+                        // gasPrice: ''
+                    };
+                    
+                    // Send the transaction
+                    const txHash = await window.ethereum.request({
+                        method: 'eth_sendTransaction',
+                        params: [transactionParameters],
+                    });
+                    
+                    console.log('Transaction hash:', txHash);
+                    
+                    // Add to transaction history
+                    addTransaction('send', recipient, amount, note);
+                    
+                    // Refresh balance after sending
+                    setTimeout(() => {
+                        getBalance(currentAccount);
+                    }, 2000);
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Transaction error:', error);
+                    showError(error.message || "Transaction failed. Please try again.");
+                    return false;
+                }
+            };
+            
+            // Create a request payment link
+            const createRequestLink = (recipient, amount, note) => {
+                // In a real app, you would create a proper deep link or use a service
+                // This is a simplified version that creates a link with parameters
+                
+                const params = new URLSearchParams();
+                params.append('to', recipient);
+                params.append('amount', amount);
+                if (note) params.append('note', note);
+                
+                // Create a reference link that in a real app would be handled by a proper back-end
+                const baseUrl = window.location.origin + window.location.pathname;
+                return `${baseUrl}?action=pay&${params.toString()}`;
+            };
+            
+            // Copy text to clipboard
+            const copyToClipboard = (text) => {
+                // Create temporary element
+                const el = document.createElement('textarea');
+                el.value = text;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                // Show feedback
+                copyRequestLinkBtn.textContent = "Copied!";
+                setTimeout(() => {
+                    copyRequestLinkBtn.textContent = "Copy Payment Link";
+                }, 2000);
+            };
+            
+            // Show error message
+            const showError = (message) => {
+                sendError.textContent = message;
+                sendError.style.display = 'block';
+                setTimeout(() => {
+                    sendError.style.display = 'none';
+                }, 5000);
+            };
+            
+            // Handle form validations
+            const validateSendForm = () => {
+                if (!sendTo.value) {
+                    showError("Please enter a recipient address");
+                    return false;
+                }
+                
+                if (!sendAmount.value || sendAmount.value <= 0) {
+                    showError("Please enter a valid amount");
+                    return false;
+                }
+                
+                // Check if amount is greater than balance
+                if (parseFloat(sendAmount.value) > currentEthBalance) {
+                    showError("Insufficient balance");
+                    return false;
+                }
+                
+                // Validate Ethereum address format
+                if (!/^0x[a-fA-F0-9]{40}$/.test(sendTo.value)) {
+                    showError("Invalid Ethereum address format");
+                    return false;
+                }
+                
+                return true;
+            };
+            
+            // Show confirmation modal
+            const showConfirmation = (recipient, amount, note) => {
+                confirmRecipient.textContent = recipient;
+                confirmAmount.textContent = amount + " ETH";
+                confirmNote.textContent = note || "No note added";
+                confirmationModal.style.display = "flex";
+            };
+            
+            // Show success modal
+            const showSuccess = () => {
+                successModal.style.display = "flex";
+            };
+            
+            // Close all modals
+            const closeModals = () => {
+                confirmationModal.style.display = "none";
+                successModal.style.display = "none";
+            };
+            
+            // Check URL for request parameters
+            const checkURLParameters = () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('action') === 'pay') {
+                    const recipient = urlParams.get('to');
+                    const amount = urlParams.get('amount');
+                    const note = urlParams.get('note');
+                    
+                    if (recipient && amount) {
+                        // Auto-fill the send form
+                        sendTo.value = recipient;
+                        sendAmount.value = amount;
+                        if (note) sendNote.value = note;
+                        
+                        // Show the form if we have a wallet connection
+                        if (currentAccount) {
+                            hideAllForms();
+                            sendForm.style.display = 'block';
+                        }
+                    }
+                }
+            };
+            
+            // Hide all forms
+            const hideAllForms = () => {
+                sendForm.style.display = 'none';
+                requestForm.style.display = 'none';
+            };
+            
+            // Event listeners
+            connectBtn.addEventListener('click', connectMetaMask);
+            refreshBtn.addEventListener('click', () => {
+                const account = accountAddress.textContent;
+                if (account) {
+                    getBalance(account);
+                }
+            });
+            
+            // Send and Request button events
+            sendBtn.addEventListener('click', () => {
+                hideAllForms();
+                sendForm.style.display = 'block';
+            });
+            
+            requestBtn.addEventListener('click', () => {
+                hideAllForms();
+                requestForm.style.display = 'block';
+            });
+            
+            // Cancel buttons
+            cancelSendBtn.addEventListener('click', () => {
+                sendForm.style.display = 'none';
+                sendTo.value = '';
+                sendAmount.value = '';
+                sendNote.value = '';
+            });
+            
+            cancelRequestBtn.addEventListener('click', () => {
+                requestForm.style.display = 'none';
+                requestFrom.value = '';
+                requestAmount.value = '';
+                requestNote.value = '';
+            });
+            
+            // Confirm send button
+            confirmSendBtn.addEventListener('click', () => {
+                if (validateSendForm()) {
+                    showConfirmation(sendTo.value, sendAmount.value, sendNote.value);
+                }
+            });
+            
+            // Final confirmation button
+            finalConfirmBtn.addEventListener('click', async () => {
+                const success = await sendEth(
+                    confirmRecipient.textContent,
+                    parseFloat(confirmAmount.textContent),
+                    confirmNote.textContent
+                );
+                
+                closeModals();
+                
+                if (success) {
+                    showSuccess();
+                    sendForm.style.display = 'none';
+                    sendTo.value = '';
+                    sendAmount.value = '';
+                    sendNote.value = '';
+                }
+            });
+            
+            // Copy request link button
+            copyRequestLinkBtn.addEventListener('click', () => {
+                if (requestFrom.value && requestAmount.value) {
+                    const requestLink = createRequestLink(
+                        currentAccount,
+                        requestAmount.value,
+                        requestNote.value
+                    );
+                    
+                    copyToClipboard(requestLink);
+                    
+                    // Add to transaction history
+                    addTransaction('request', requestFrom.value, requestAmount.value, requestNote.value, 'pending');
+                } else {
+                    alert('Please fill in the required fields');
+                }
+            });
+            
+            // Close buttons for modals
+            closeModalButtons.forEach(btn => {
+                btn.addEventListener('click', closeModals);
+            });
+            
+            cancelConfirmBtn.addEventListener('click', closeModals);
+            closeSuccessBtn.addEventListener('click', closeModals);
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === confirmationModal) {
+                    closeModals();
+                }
+                if (e.target === successModal) {
+                    closeModals();
+                }
+            });
+            
+            // Check URL parameters
+            window.addEventListener('load', checkURLParameters);
+            
+            // Initial UI setup
+            statusDiv.textContent = 'Click the button below to connect to MetaMask';
+            updateTransactionList();
+        };
+        
+        // Run immediately
+        initApp();
+        
+        // Also run when DOM is fully loaded (as a fallback)
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
