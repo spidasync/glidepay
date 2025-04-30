@@ -176,6 +176,189 @@
         #refreshBtn:hover {
             background-color: var(--background-light);
         }
+
+        /* New styles for transaction section */
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        #sendBtn {
+            background-color: var(--eth-blue);
+        }
+
+        #requestBtn {
+            background-color: var(--currency-green);
+        }
+
+        .transaction-form {
+            display: none;
+            margin-top: 20px;
+            background-color: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .cancel-btn {
+            background-color: #fff;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+        }
+
+        .transaction-history {
+            margin-top: 30px;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .transaction-details {
+            flex: 1;
+        }
+
+        .transaction-type {
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .transaction-recipient, .transaction-note {
+            font-size: 14px;
+            color: var(--secondary-text);
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+        }
+
+        .sent {
+            color: #c72e2e;
+        }
+
+        .received {
+            color: var(--currency-green);
+        }
+
+        .pending {
+            color: #f5a623;
+        }
+
+        .transaction-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background-color: var(--background-light);
+            margin-left: 10px;
+        }
+
+        .qr-code {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .qr-container {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .qr-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            color: var(--secondary-text);
+        }
+
+        .success-message {
+            text-align: center;
+            padding: 20px;
+            color: var(--currency-green);
+            font-weight: bold;
+        }
+
+        .error-message {
+            color: #c72e2e;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: rgba(199, 46, 46, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -233,10 +416,152 @@
                 <div class="balance-label">Connected Address</div>
                 <div id="accountAddress" class="address"></div>
                 <button id="refreshBtn">Refresh Balance</button>
+                
+                <!-- New action buttons for send and request -->
+                <div class="action-buttons">
+                    <button id="sendBtn">Send ETH</button>
+                    <button id="requestBtn">Request ETH</button>
+                </div>
+            </div>
+            
+            <!-- Send ETH Form -->
+            <div id="sendForm" class="transaction-form">
+                <div class="section-title">Send ETH</div>
+                <div class="form-group">
+                    <label for="sendTo">Recipient Address</label>
+                    <input type="text" id="sendTo" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label for="sendAmount">Amount (ETH)</label>
+                    <input type="number" id="sendAmount" min="0" step="0.0001" placeholder="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="sendNote">Add a Note (Optional)</label>
+                    <textarea id="sendNote" rows="3" placeholder="Thanks for lunch!"></textarea>
+                </div>
+                <div id="sendError" class="error-message" style="display: none;"></div>
+                <div class="form-footer">
+                    <button id="cancelSendBtn" class="cancel-btn">Cancel</button>
+                    <button id="confirmSendBtn">Send Now</button>
+                </div>
+            </div>
+            
+            <!-- Request ETH Form -->
+            <div id="requestForm" class="transaction-form">
+                <div class="section-title">Request ETH</div>
+                <div class="form-group">
+                    <label for="requestFrom">Request From (Address)</label>
+                    <input type="text" id="requestFrom" placeholder="0x...">
+                </div>
+                <div class="form-group">
+                    <label for="requestAmount">Amount (ETH)</label>
+                    <input type="number" id="requestAmount" min="0" step="0.0001" placeholder="0.01">
+                </div>
+                <div class="form-group">
+                    <label for="requestNote">Add a Note (Optional)</label>
+                    <textarea id="requestNote" rows="3" placeholder="For our project expenses"></textarea>
+                </div>
+                
+                <div class="qr-code">
+                    <div class="qr-container">
+                        <div class="qr-title">Scan to Pay</div>
+                        <div id="requestQRCode">
+                            <!-- QR code will be generated here -->
+                            <svg width="150" height="150" viewBox="0 0 150 150">
+                                <rect width="150" height="150" fill="#ffffff" />
+                                <rect x="10" y="10" width="10" height="10" fill="#000000" />
+                                <rect x="20" y="10" width="10" height="10" fill="#000000" />
+                                <rect x="30" y="10" width="10" height="10" fill="#000000" />
+                                <!-- Simple QR code placeholder -->
+                                <!-- In a real implementation, we would use a QR code library -->
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-footer">
+                    <button id="cancelRequestBtn" class="cancel-btn">Cancel</button>
+                    <button id="copyRequestLinkBtn">Copy Payment Link</button>
+                </div>
+            </div>
+            
+            <!-- Transaction History Section -->
+            <div class="transaction-history">
+                <div class="section-title">Recent Activity</div>
+                <div id="transactionList">
+                    <!-- Transactions will be added here -->
+                    <div class="transaction-item">
+                        <div class="transaction-details">
+                            <div class="transaction-type">Payment Sent</div>
+                            <div class="transaction-recipient">To: 0x1234...5678</div>
+                            <div class="transaction-note">Note: Thanks for the help!</div>
+                        </div>
+                        <div class="transaction-amount sent">-0.05 ETH</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-details">
+                            <div class="transaction-type">Payment Received</div>
+                            <div class="transaction-recipient">From: 0xabcd...efgh</div>
+                            <div class="transaction-note">Note: Project contribution</div>
+                        </div>
+                        <div class="transaction-amount received">+0.1 ETH</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-details">
+                            <div class="transaction-type">Payment Request</div>
+                            <div class="transaction-recipient">To: 0x7890...1234</div>
+                            <div class="transaction-note">Note: For the design work</div>
+                        </div>
+                        <div class="transaction-amount pending">0.2 ETH <span class="transaction-status">Pending</span></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-
+    
+    <!-- Transaction Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Confirm Transaction</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="confirmationDetails">
+                <div class="form-group">
+                    <label>Recipient</label>
+                    <div class="address" id="confirmRecipient"></div>
+                </div>
+                <div class="form-group">
+                    <label>Amount</label>
+                    <div id="confirmAmount" class="balance-amount"></div>
+                </div>
+                <div class="form-group">
+                    <label>Note</label>
+                    <div id="confirmNote"></div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button id="cancelConfirmBtn" class="cancel-btn">Cancel</button>
+                <button id="finalConfirmBtn">Confirm & Send</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Transaction Successful</div>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="success-message">
+                Your transaction has been submitted successfully!
+            </div>
+            <div class="form-footer">
+                <button id="closeSuccessBtn">Close</button>
+            </div>
+        </div>
+    </div>
     
     <script>
         // Run immediately and also when DOM content is loaded
@@ -251,7 +576,112 @@
             const currencyCodeDiv = document.getElementById('currency-code');
             const currencySelect = document.getElementById('currency-select');
             
+            // Transaction elements
+            const sendBtn = document.getElementById('sendBtn');
+            const requestBtn = document.getElementById('requestBtn');
+            const sendForm = document.getElementById('sendForm');
+            const requestForm = document.getElementById('requestForm');
+            const cancelSendBtn = document.getElementById('cancelSendBtn');
+            const cancelRequestBtn = document.getElementById('cancelRequestBtn');
+            const confirmSendBtn = document.getElementById('confirmSendBtn');
+            const copyRequestLinkBtn = document.getElementById('copyRequestLinkBtn');
+            
+            // Modal elements
+            const confirmationModal = document.getElementById('confirmationModal');
+            const successModal = document.getElementById('successModal');
+            const confirmRecipient = document.getElementById('confirmRecipient');
+            const confirmAmount = document.getElementById('confirmAmount');
+            const confirmNote = document.getElementById('confirmNote');
+            const finalConfirmBtn = document.getElementById('finalConfirmBtn');
+            const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
+            const closeSuccessBtn = document.getElementById('closeSuccessBtn');
+            const closeModalButtons = document.querySelectorAll('.close-modal');
+            
+            // Form inputs
+            const sendTo = document.getElementById('sendTo');
+            const sendAmount = document.getElementById('sendAmount');
+            const sendNote = document.getElementById('sendNote');
+            const requestFrom = document.getElementById('requestFrom');
+            const requestAmount = document.getElementById('requestAmount');
+            const requestNote = document.getElementById('requestNote');
+            const sendError = document.getElementById('sendError');
+            
             let currentEthBalance = 0;
+            let currentAccount = null;
+            
+            // Transaction history management
+            const transactions = [];
+            const transactionList = document.getElementById('transactionList');
+            
+            // Add a new transaction to history
+            const addTransaction = (type, recipient, amount, note, status = 'completed') => {
+                const transaction = {
+                    id: Date.now().toString(),
+                    type,
+                    recipient,
+                    amount,
+                    note,
+                    status,
+                    timestamp: new Date()
+                };
+                
+                transactions.unshift(transaction);
+                updateTransactionList();
+                
+                // In a real app, you would save this to localStorage or a backend
+                return transaction;
+            };
+            
+            // Update the transaction list UI
+            const updateTransactionList = () => {
+                transactionList.innerHTML = '';
+                
+                if (transactions.length === 0) {
+                    transactionList.innerHTML = '<div class="transaction-item">No transactions yet</div>';
+                    return;
+                }
+                
+                // Display only the last 5 transactions
+                const recentTransactions = transactions.slice(0, 5);
+                
+                recentTransactions.forEach(tx => {
+                    const item = document.createElement('div');
+                    item.className = 'transaction-item';
+                    
+                    let typeText = '';
+                    let amountClass = '';
+                    let amountPrefix = '';
+                    
+                    if (tx.type === 'send') {
+                        typeText = 'Payment Sent';
+                        amountClass = 'sent';
+                        amountPrefix = '-';
+                    } else if (tx.type === 'receive') {
+                        typeText = 'Payment Received';
+                        amountClass = 'received';
+                        amountPrefix = '+';
+                    } else if (tx.type === 'request') {
+                        typeText = 'Payment Request';
+                        amountClass = 'pending';
+                        amountPrefix = '';
+                    }
+                    
+                    const recipientLabel = tx.type === 'receive' ? 'From: ' : 'To: ';
+                    
+                    item.innerHTML = `
+                        <div class="transaction-details">
+                            <div class="transaction-type">${typeText}</div>
+                            <div class="transaction-recipient">${recipientLabel}${tx.recipient}</div>
+                            ${tx.note ? `<div class="transaction-note">Note: ${tx.note}</div>` : ''}
+                        </div>
+                        <div class="transaction-amount ${amountClass}">${amountPrefix}${tx.amount} ETH 
+                            ${tx.status === 'pending' ? '<span class="transaction-status">Pending</span>' : ''}
+                        </div>
+                    `;
+                    
+                    transactionList.appendChild(item);
+                });
+            };
             
             // Fetch ETH price in selected currency
             const fetchEthPrice = async (currency) => {
@@ -352,6 +782,7 @@
                     // Check if we got accounts
                     if (accounts && accounts.length > 0) {
                         const account = accounts[0];
+                        currentAccount = account;
                         
                         statusDiv.textContent = 'Connected to MetaMask';
                         statusDiv.className = 'connected';
@@ -371,6 +802,7 @@
                                 } else {
                                     // Account changed
                                     const newAccount = accounts[0];
+                                    currentAccount = newAccount;
                                     accountAddress.textContent = newAccount;
                                     getBalance(newAccount);
                                 }
@@ -412,57 +844,4 @@
                         const ethBalance = parseInt(balance, 16) / Math.pow(10, 18);
                         currentEthBalance = ethBalance;
                         
-                        // Format ETH with appropriate precision based on amount
-                        if (ethBalance === 0) {
-                            ethBalanceDiv.textContent = '0.0000 ETH';
-                        } else if (ethBalance < 0.0001) {
-                            ethBalanceDiv.textContent = ethBalance.toFixed(8) + ' ETH';
-                        } else {
-                            ethBalanceDiv.textContent = ethBalance.toFixed(4) + ' ETH';
-                        }
-                        
-                        // Update currency balance
-                        updateCurrencyBalance();
-                    } else {
-                        ethBalanceDiv.textContent = 'Unable to fetch balance';
-                        currencyBalanceDiv.textContent = '-';
-                    }
-                } catch (error) {
-                    console.error('Balance error:', error);
-                    ethBalanceDiv.textContent = 'Error fetching balance';
-                    currencyBalanceDiv.textContent = '-';
-                }
-            };
-            
-            // Reset UI when disconnected
-            const resetUI = () => {
-                statusDiv.textContent = 'Disconnected from MetaMask';
-                statusDiv.className = 'disconnected';
-                accountInfo.style.display = 'none';
-                connectBtn.style.display = 'block';
-                ethBalanceDiv.textContent = '-';
-                currencyBalanceDiv.textContent = '-';
-                currentEthBalance = 0;
-            };
-            
-            // Event listeners
-            connectBtn.addEventListener('click', connectMetaMask);
-            refreshBtn.addEventListener('click', () => {
-                const account = accountAddress.textContent;
-                if (account) {
-                    getBalance(account);
-                }
-            });
-            
-            // Initial UI setup
-            statusDiv.textContent = 'Click the button below to connect to MetaMask';
-        };
-        
-        // Run immediately
-        initApp();
-        
-        // Also run when DOM is fully loaded (as a fallback)
-        document.addEventListener('DOMContentLoaded', initApp);
-    </script>
-</body>
-</html>
+                        // Format ETH with appropriate precision base
