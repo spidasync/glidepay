@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>glidePay - Wallet</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Consider adding a favicon -->
+    <!-- <link rel="icon" href="/favicon.ico" type="image/x-icon"> -->
+</head>
+<body>
+    <header class="header">
+        <div class="logo">💙PAY</div> <!-- Updated Logo -->
+        <nav class="navigation">
+            <a href="#" class="nav-link active">Summary</a>
+            <a href="#" class="nav-link">Activity</a>
+            <a href="#" class="nav-link">Send & Request</a>
+            <a href="#" class="nav-link">Wallet</a>
+            <a href="#" class="nav-link">Help</a>
+        </nav>
+        <div class="header-controls">
+             <!-- Currency selector removed from header based on screenshot -->
+            <button id="connectBtn">Connect Wallet</button>
+        </div>
+    </header>
+
+    <div id="status" class="info status-banner">Welcome to your ETH Dashboard</div>
+
+    <main class="main-content hidden" id="dashboardContent"> <!-- Hide main content until connected -->
+        <div class="left-column">
+            <!-- Current Balance Card -->
+            <div class="card balance-card">
+                <div class="card-header">
+                    <span class="card-title">Current Balance</span>
+                    <button id="toggleBalanceBtn" class="balance-toggle-btn" aria-label="Toggle balance visibility">
+                        <!-- SVG Eye Icon - Populated by JS -->
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="currency-balance" class="balance-amount currency-balance">-</div>
+                    <div id="currency-code" class="balance-secondary">USD</div>
+                    <!-- Removed Swap/Bridge buttons from screenshot -->
+                </div>
+            </div>
+
+            <!-- Pay/Request Buttons -->
+            <div class="action-buttons-grid">
+                 <button id="sendBtn" class="action-button action-button-pay">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="24" height="24">
+                       <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm-.75-4.75a.75.75 0 0 0 1.5 0V8.66l1.95 2.1a.75.75 0 1 0 1.1-1.02l-3.25-3.5a.75.75 0 0 0-1.1 0L6.2 9.74a.75.75 0 1 0 1.1 1.02l1.95-2.1v4.59Z" clip-rule="evenodd" />
+                     </svg>
+                     <span>Pay</span>
+                 </button>
+                 <button id="requestBtn" class="action-button action-button-request">
+                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="24" height="24">
+                       <path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm0-1.25a6.75 6.75 0 1 1 0-13.5 6.75 6.75 0 0 1 0 13.5ZM10 7a.75.75 0 0 0-1.5 0v2.25H6.25a.75.75 0 0 0 0 1.5h2.25V13a.75.75 0 0 0 1.5 0v-2.25h2.25a.75.75 0 0 0 0-1.5H11.5V7Z" clip-rule="evenodd" />
+                     </svg>
+                     <span>Request</span>
+                 </button>
+            </div>
+
+            <!-- Account Details Card -->
+            <div class="card account-details-card">
+                 <div class="card-header">
+                    <span class="card-title">Account Details</span>
+                 </div>
+                 <div class="card-body">
+                     <div class="account-detail-item">
+                         <!-- Icon placeholder -->
+                         <span class="account-icon">👤</span>
+                         <div class="account-info">
+                             <div class="account-label">Connected Wallet</div>
+                             <div class="address-container">
+                                 <span id="accountAddress" class="address"></span>
+                                 <button id="copyAddressBtn" class="icon-button copy-button" aria-label="Copy Address">
+                                     <!-- SVG Copy Icon -->
+                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+                                       <path d="M7 3.5A1.5 1.5 0 0 1 8.5 2h3.879a1.5 1.5 0 0 1 1.06.44l3.122 3.121A1.5 1.5 0 0 1 17 6.621V16.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 16.5v-13Z" />
+                                       <path d="M4.5 6A1.5 1.5 0 0 0 3 7.5v9A1.5 1.5 0 0 0 4.5 18h7a1.5 1.5 0 0 0 1.5-1.5v-1.121A2.998 2.998 0 0 1 11.879 15H8.5A1.5 1.5 0 0 1 7 13.5V9.621a3 3 0 0 1-1.06-.44L4.5 7.743V6Z" />
+                                     </svg>
+                                     <span class="copy-tooltip">Copy</span>
+                                 </button>
+                             </div>
+                         </div>
+                     </div>
+                     <div class="account-detail-item">
+                         <!-- Icon placeholder -->
+                         <span class="account-icon">💰</span>
+                         <div class="account-info">
+                             <div class="account-label">Native ETH Tokens</div>
+                             <div id="eth-balance" class="balance-amount eth-balance">-</div>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <!-- Recent Activity Card -->
+            <div class="card transaction-history">
+                 <div class="card-header">
+                    <span class="card-title">Recent Activity</span>
+                 </div>
+                 <div class="card-body">
+                    <div id="transactionList">
+                        <!-- Placeholder for dynamic content -->
+                        <div class="transaction-item">
+                            <div class="transaction-details">
+                                <div class="transaction-type">No transactions yet</div>
+                                <div class="transaction-recipient">Connect your wallet and make a transaction.</div>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+            </div>
+
+            <!-- Send ETH Form (Initially Hidden) -->
+            <div id="sendForm" class="card transaction-form hidden">
+                <div class="card-header">
+                    <span class="card-title">Send ETH</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="sendTo">Recipient Address</label>
+                        <input type="text" id="sendTo" placeholder="Enter Ethereum address (0x...)">
+                    </div>
+                    <div class="form-group">
+                        <label for="sendAmount">Amount (ETH)</label>
+                        <input type="number" id="sendAmount" min="0" step="any" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="sendNote">Note (Optional)</label>
+                        <textarea id="sendNote" rows="3" placeholder="Add a note for the recipient"></textarea>
+                    </div>
+                    <div id="sendError" class="error-message hidden"></div>
+                </div>
+                <div class="form-footer">
+                    <button id="cancelSendBtn" class="cancel-btn">Cancel</button>
+                    <button id="confirmSendBtn">Review & Send</button>
+                </div>
+            </div>
+
+            <!-- Request ETH Form (Initially Hidden) -->
+            <div id="requestForm" class="card transaction-form hidden">
+                 <div class="card-header">
+                    <span class="card-title">Request ETH</span>
+                 </div>
+                 <div class="card-body">
+                     <div class="form-group">
+                        <label for="requestMyAddress">Your Address (Recipient)</label>
+                        <input type="text" id="requestMyAddress" readonly disabled>
+                    </div>
+                    <div class="form-group">
+                        <label for="requestAmount">Amount (ETH)</label>
+                        <input type="number" id="requestAmount" min="0" step="any" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="requestNote">Note (Optional)</label>
+                        <textarea id="requestNote" rows="3" placeholder="Reason for the request (optional)"></textarea>
+                    </div>
+                 </div>
+                <div class="form-footer">
+                    <button id="cancelRequestBtn" class="cancel-btn">Cancel</button>
+                    <button id="copyRequestLinkBtn">Copy Payment Link</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Transaction Confirmation Modal -->
+    <div id="confirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Confirm Transaction</div>
+                <button class="close-modal" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="confirmationDetails">
+                    <div class="form-group">
+                        <label>Sending To</label>
+                        <div class="address" id="confirmRecipient"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount</label>
+                        <div id="confirmAmount" class="balance-amount"></div>
+                    </div>
+                     <div class="form-group">
+                        <label>Estimated Gas</label>
+                        <div id="confirmGas" class="balance-secondary">Calculating...</div> <!-- Placeholder -->
+                    </div>
+                    <div class="form-group">
+                        <label>Note</label>
+                        <div id="confirmNote"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button id="cancelConfirmBtn" class="cancel-btn">Cancel</button>
+                <button id="finalConfirmBtn">Confirm & Send</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div id="successModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Success</div>
+                <button class="close-modal" aria-label="Close">&times;</button>
+            </div>
+             <div class="modal-body">
+                <div class="success-message">
+                    Transaction Submitted!
+                </div>
+                 <!-- Optional: Add link to Etherscan -->
+                 <div id="etherscanLinkContainer" class="etherscan-link hidden">
+                     <a id="etherscanLink" href="#" target="_blank" rel="noopener noreferrer">View on Etherscan</a>
+                 </div>
+            </div>
+            <div class="form-footer">
+                <button id="closeSuccessBtn" class="cancel-btn">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Request Modal -->
+    <div id="paymentRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Incoming Payment Request</div>
+                <button class="close-modal" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-request-details">
+                    <div class="request-message">
+                        <span id="requesterAddress"></span> is requesting a payment:
+                    </div>
+                    <div class="request-amount" id="requestedAmount"></div>
+                    <div class="request-note" id="requestNoteDisplay"></div>
+                </div>
+            </div>
+            <div class="form-footer">
+                <button id="declinePaymentBtn" class="cancel-btn">Decline</button>
+                <button id="approvePaymentBtn">Pay Now</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
