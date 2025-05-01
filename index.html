@@ -36,15 +36,25 @@
         </div>
     </div>
 
+    <!-- Replace the balance-container div with this -->
     <div class="balance-container">
+        <div class="balance-header">
+            <span>Your Balance</span>
+            <button id="toggleBalanceVisibility" class="visibility-toggle" aria-label="Toggle balance visibility">
+                <span class="eye-icon eye-open">👁️</span>
+                <span class="eye-icon eye-closed" style="display: none;">👁️‍🗨️</span>
+            </button>
+        </div>
         <div class="balance-grid">
             <div class="balance-card">
                 <div class="balance-label">ETH Balance</div>
                 <div id="eth-balance" class="balance-amount eth-balance">-</div>
+                <div id="eth-balance-hidden" class="balance-amount eth-balance hidden-balance" style="display: none;">******</div>
             </div>
             <div class="balance-card">
                 <div class="balance-label">Currency Balance</div>
                 <div id="currency-balance" class="balance-amount currency-balance">-</div>
+                <div id="currency-balance-hidden" class="balance-amount currency-balance hidden-balance" style="display: none;">******</div>
                 <div id="currency-code" class="balance-secondary">USD</div>
             </div>
         </div>
