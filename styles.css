@@ -376,8 +376,33 @@ button:hover {
     background-color: rgba(199, 46, 46, 0.1);
 }
 
+.request-note-container {
+    margin: 20px 0;
+    padding: 15px;
+    background: var(--background-light);
+    border-radius: 8px;
+    text-align: left;
+}
+
+.request-note-label {
+    font-size: 14px;
+    color: var(--secondary-text);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.request-note {
+    font-size: 16px;
+    color: var(--text-color);
+    line-height: 1.4;
+    word-break: break-word;
+    font-style: normal;
+    background: none;
+    padding: 0;
+}
+
 .payment-request-details {
-    padding: 20px 0;
+    padding: 25px 0;
     text-align: center;
 }
 
@@ -388,23 +413,13 @@ button:hover {
 }
 
 .request-amount {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: bold;
     color: var(--eth-blue);
-    margin: 20px 0;
-}
-
-.request-note {
-    font-size: 16px;
-    color: var(--secondary-text);
-    font-style: italic;
     margin: 15px 0;
-    padding: 10px;
-    background: var(--background-light);
-    border-radius: 4px;
 }
 
 #requesterAddress {
-    font-weight: bold;
+    font-weight: 600;
     color: var(--eth-blue);
 }
