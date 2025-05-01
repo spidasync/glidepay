@@ -57,6 +57,7 @@
                     </button>
                 </div>
                 <div class="card-body">
+                    <!-- Apply balance-positive/balance-negative class here -->
                     <div id="currency-balance" class="balance-amount currency-balance">-</div>
                     <div id="currency-code" class="balance-secondary">USD</div>
                 </div>
@@ -193,8 +194,15 @@
             </div>
             <div class="card-body">
                 <p><strong>Email:</strong> <span id="accountEmail"></span></p>
-                <p>Manage your account settings here.</p>
-                <!-- Removed placeholder comment -->
+                <hr class="account-divider"> <!-- Divider -->
+                <div class="form-group currency-settings">
+                    <label for="currencySelect">Display Currency</label>
+                    <select id="currencySelect">
+                        <!-- Options populated by JS -->
+                    </select>
+                    <div id="currencyStatus" class="status-message hidden"></div>
+                </div>
+                <hr class="account-divider"> <!-- Divider -->
                 <button id="logoutBtn" class="account-logout-btn">Logout</button> <!-- Moved Logout Button Here -->
             </div>
         </div>

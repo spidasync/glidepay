@@ -85,6 +85,10 @@ const initApp = function() {
     const requestedAmountEl = document.getElementById('requestedAmount');
     const requestNoteDisplayEl = document.getElementById('requestNoteDisplay');
 
+    // Currency Settings Elements
+    const currencySelect = document.getElementById('currencySelect');
+    const currencyStatus = document.getElementById('currencyStatus');
+
     // --- State Variables ---
     let currentEthBalance = 0;
     let currentFiatBalance = 0;
@@ -96,6 +100,16 @@ const initApp = function() {
     const PRICE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
     let isBalanceVisible = true;
     const transactions = [];
+    let selectedCurrency = localStorage.getItem('selectedCurrency') || 'USD'; // Load saved currency or default to USD
+
+    // --- Constants ---
+    const POPULAR_CURRENCIES = {
+        'USD': 'United States Dollar', 'EUR': 'Euro', 'JPY': 'Japanese Yen', 'GBP': 'British Pound Sterling',
+        'AUD': 'Australian Dollar', 'CAD': 'Canadian Dollar', 'CHF': 'Swiss Franc', 'CNY': 'Chinese Yuan',
+        'SEK': 'Swedish Krona', 'NZD': 'New Zealand Dollar', 'MXN': 'Mexican Peso', 'SGD': 'Singapore Dollar',
+        'HKD': 'Hong Kong Dollar', 'NOK': 'Norwegian Krone', 'KRW': 'South Korean Won', 'TRY': 'Turkish Lira',
+        'RUB': 'Russian Ruble', 'INR': 'Indian Rupee', 'BRL': 'Brazilian Real', 'ZAR': 'South African Rand'
+    };
 
     // SVG Icons (Keep as they are)
     const eyeIconSVG = `
@@ -163,15 +177,26 @@ const initApp = function() {
     };
 
     const updateBalanceDisplay = () => {
-        const selectedCurrency = 'USD';
         if (currencyCodeDiv) currencyCodeDiv.textContent = selectedCurrency;
 
         if (isBalanceVisible) {
-            if (currencyBalanceDiv) currencyBalanceDiv.textContent = formatCurrency(currentFiatBalance, selectedCurrency);
+            if (currencyBalanceDiv) {
+                currencyBalanceDiv.textContent = formatCurrency(currentFiatBalance, selectedCurrency);
+                // Apply conditional color classes
+                currencyBalanceDiv.classList.remove('balance-positive', 'balance-negative');
+                if (currentFiatBalance > 0) {
+                    currencyBalanceDiv.classList.add('balance-positive');
+                } else {
+                    currencyBalanceDiv.classList.add('balance-negative');
+                }
+            }
             if (ethBalanceDiv) ethBalanceDiv.textContent = formatEth(currentEthBalance);
             if (toggleBalanceBtn) toggleBalanceBtn.innerHTML = eyeSlashIconSVG;
         } else {
-            if (currencyBalanceDiv) currencyBalanceDiv.textContent = formatCurrency(0, selectedCurrency).replace(/[\d.,]/g, '*');
+            if (currencyBalanceDiv) {
+                 currencyBalanceDiv.textContent = formatCurrency(0, selectedCurrency).replace(/[\d.,]/g, '*');
+                 currencyBalanceDiv.classList.remove('balance-positive', 'balance-negative'); // Remove color classes when hidden
+            }
             if (ethBalanceDiv) ethBalanceDiv.textContent = '**** ETH';
             if (toggleBalanceBtn) toggleBalanceBtn.innerHTML = eyeIconSVG;
         }
@@ -265,11 +290,13 @@ const initApp = function() {
         });
     };
 
-    // --- API & Blockchain Interaction --- (Keep mostly as is)
+    // --- API & Blockchain Interaction ---
     const fetchEthPrice = async (currency) => {
+        const cacheKey = `ethPrice_${currency}`; // Cache key includes currency
         const now = Date.now();
-        const cachedPrice = ethPriceData[currency];
+        const cachedPrice = ethPriceData[cacheKey];
         if (cachedPrice && (now - lastPriceFetchTime < PRICE_CACHE_DURATION)) {
+            console.log(`Using cached ETH price for ${currency}`);
             return cachedPrice;
         }
         console.log(`Fetching ETH price for ${currency}...`);
@@ -280,8 +307,8 @@ const initApp = function() {
             const price = data?.ethereum?.[currency.toLowerCase()];
 
             if (price) {
-                ethPriceData[currency] = price;
-                lastPriceFetchTime = now;
+                ethPriceData[cacheKey] = price; // Store with currency-specific key
+                lastPriceFetchTime = now; // Update timestamp for general cache validity
                 console.log(`Price updated: 1 ETH = ${price} ${currency}`);
                 return price;
             } else {
@@ -290,19 +317,18 @@ const initApp = function() {
         } catch (error) {
             console.error('Error fetching ETH price:', error);
             updateStatus('Unable to fetch price data', 'error'); // Use 'error' type
-            return ethPriceData[currency] || null;
+            return ethPriceData[cacheKey] || null; // Return cached if available, else null
         }
     };
 
     const updateCurrencyBalance = async () => {
-        const selectedCurrency = 'USD';
-        const ethPrice = await fetchEthPrice(selectedCurrency);
+        const ethPrice = await fetchEthPrice(selectedCurrency); // Use selectedCurrency
         if (ethPrice !== null) {
             currentFiatBalance = currentEthBalance * ethPrice;
         } else {
             currentFiatBalance = 0;
         }
-        updateBalanceDisplay();
+        updateBalanceDisplay(); // This will now apply colors and use selected currency
     };
 
     const getBalance = async (account) => {
@@ -313,7 +339,7 @@ const initApp = function() {
             const ethBalance = parseInt(balanceWei, 16) / 1e18;
             currentEthBalance = ethBalance;
             console.log("Balance updated:", ethBalance, "ETH");
-            await updateCurrencyBalance();
+            await updateCurrencyBalance(); // This triggers fiat update with selected currency
         } catch (error) {
             console.error('Balance error:', error);
             currentEthBalance = 0;
@@ -484,14 +510,14 @@ const initApp = function() {
                 if (accountAddressSpan) accountAddressSpan.title = newAccount;
                 if (connectBtn) connectBtn.textContent = 'Disconnect Wallet';
                 if (connectBtn) connectBtn.classList.add('disconnect-state');
-                await getBalance(newAccount);
+                await getBalance(newAccount); // Will use selectedCurrency
                 hideAllForms();
                 transactions.length = 0;
                 updateTransactionList();
                 setupMetaMaskListeners();
                 checkURLParameters();
             } else {
-                 if (currentAccount) await getBalance(currentAccount);
+                 if (currentAccount) await getBalance(currentAccount); // Refresh balance if account is same
             }
         } else {
             console.log('MetaMask disconnected or locked.');
@@ -513,7 +539,7 @@ const initApp = function() {
         currentEthBalance = 0;
         currentFiatBalance = 0;
         currentAccount = null;
-        updateBalanceDisplay();
+        updateBalanceDisplay(); // Will use selectedCurrency and apply colors
         hideAllForms();
         transactions.length = 0;
         updateTransactionList();
@@ -542,7 +568,7 @@ const initApp = function() {
         currentFiatBalance = 0;
         currentAccount = null;
         currentUser = null;
-        updateBalanceDisplay();
+        updateBalanceDisplay(); // Will use selectedCurrency and apply colors
         hideAllForms();
         transactions.length = 0;
         updateTransactionList();
@@ -685,6 +711,44 @@ const initApp = function() {
         }
     };
 
+    // --- Currency Settings ---
+    const populateCurrencySelect = () => {
+        if (!currencySelect) return;
+        currencySelect.innerHTML = ''; // Clear existing options
+        Object.entries(POPULAR_CURRENCIES).forEach(([code, name]) => {
+            const option = document.createElement('option');
+            option.value = code;
+            option.textContent = `${code} - ${name}`;
+            if (code === selectedCurrency) {
+                option.selected = true;
+            }
+            currencySelect.appendChild(option);
+        });
+    };
+
+    const handleCurrencyChange = async () => {
+        const newCurrency = currencySelect?.value;
+        if (!newCurrency || newCurrency === selectedCurrency) return;
+
+        selectedCurrency = newCurrency;
+        localStorage.setItem('selectedCurrency', selectedCurrency);
+        console.log("Currency changed to:", selectedCurrency);
+
+        // Show status message
+        if (currencyStatus) {
+            currencyStatus.textContent = `Currency set to ${selectedCurrency}. Updating balance...`;
+            showElement(currencyStatus);
+        }
+
+        // Re-fetch price and update balance display
+        await updateCurrencyBalance();
+
+        // Hide status message after a delay
+        setTimeout(() => {
+            if (currencyStatus) hideElement(currencyStatus);
+        }, 2500);
+    };
+
 
     // --- Event Listeners Setup ---
 
@@ -707,6 +771,7 @@ const initApp = function() {
             if (accountEmailSpan && currentUser) {
                 accountEmailSpan.textContent = currentUser.email;
             }
+            populateCurrencySelect(); // Ensure dropdown is populated when section is shown
         });
     }
     if (backToWalletBtn) {
@@ -831,6 +896,11 @@ const initApp = function() {
         });
     }
 
+    // Currency Select Change Listener
+    if (currencySelect) {
+        currencySelect.addEventListener('change', handleCurrencyChange);
+    }
+
     // Close modals on outside click
     window.addEventListener('click', (e) => {
         if (e.target instanceof Element && e.target.classList.contains('modal')) {
@@ -869,8 +939,9 @@ const initApp = function() {
     console.log("Initializing App...");
     // Initial state is logged-out, handled by onAuthStateChanged
     resetAppUI(); // Start in logged-out state
+    populateCurrencySelect(); // Populate dropdown even if hidden initially
     updateTransactionList(); // Show empty state initially
-    updateBalanceDisplay(); // Set initial icons/state
+    updateBalanceDisplay(); // Set initial icons/state using selectedCurrency
 
     // No auto-reconnect for wallet here, wait for Firebase login first.
     // Firebase's onAuthStateChanged handles the initial check.
