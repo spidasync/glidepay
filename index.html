@@ -896,6 +896,7 @@
             };
             
             // Send ETH function
+            // Replace the sendEth function with this improved version
             const sendEth = async (recipient, amount, note) => {
                 if (!window.ethereum) {
                     showError("MetaMask not found. Please install MetaMask to send ETH.");
@@ -910,13 +911,10 @@
                     const transactionParameters = {
                         to: recipient,
                         from: currentAccount,
-                        value: amountWei,
-                        // Optional: Include gas parameters
-                        // gas: '',
-                        // gasPrice: ''
+                        value: amountWei
                     };
                     
-                    // Send the transaction
+                    // Send the transaction with a single request
                     const txHash = await window.ethereum.request({
                         method: 'eth_sendTransaction',
                         params: [transactionParameters],
@@ -924,15 +922,20 @@
                     
                     console.log('Transaction hash:', txHash);
                     
-                    // Add to transaction history
-                    addTransaction('send', recipient, amount, note);
-                    
-                    // Refresh balance after sending
-                    setTimeout(() => {
-                        getBalance(currentAccount);
-                    }, 2000);
-                    
-                    return true;
+                    // Only add to transaction history if we got a valid hash
+                    if (txHash) {
+                        // Add to transaction history
+                        addTransaction('send', recipient, amount, note);
+                        
+                        // Refresh balance after sending
+                        setTimeout(() => {
+                            getBalance(currentAccount);
+                        }, 2000);
+                        
+                        return true;
+                    } else {
+                        throw new Error("Transaction failed. No transaction hash received.");
+                    }
                 } catch (error) {
                     console.error('Transaction error:', error);
                     showError(error.message || "Transaction failed. Please try again.");
@@ -1048,25 +1051,46 @@
                     // Show the modal
                     paymentRequestModal.style.display = 'flex';
                     
-                    // Handle approve payment
-                    // Handle approve payment - modified to connect wallet automatically if needed
+                    // Modify the approvePaymentBtn event handler to fix the payment flow
                     approvePaymentBtn.addEventListener('click', async () => {
-                        if (!currentAccount) {
-                            // Connect wallet first, then proceed with payment
-                            statusDiv.textContent = 'Connecting wallet to process payment...';
-                            await connectMetaMask();
-                        }
+                        // First hide the modal to prevent double-clicks
+                        document.getElementById('paymentRequestModal').style.display = 'none';
                         
-                        // Now check if connection was successful
-                        if (currentAccount) {
-                            paymentRequestModal.style.display = 'none';
-                            sendTo.value = recipient;
-                            sendAmount.value = amount;
-                            if (note) sendNote.value = note;
-                            sendForm.style.display = 'block';
-                        } else {
-                            // Still not connected, show a more helpful message
-                            alert('Unable to connect to your wallet. Please make sure MetaMask is installed and unlocked.');
+                        // Disable the button to prevent multiple clicks
+                        approvePaymentBtn.disabled = true;
+                        
+                        try {
+                            if (!currentAccount) {
+                                // Connect wallet first, then proceed with payment
+                                statusDiv.textContent = 'Connecting wallet to process payment...';
+                                await connectMetaMask();
+                            }
+                            
+                            // Now check if connection was successful
+                            if (currentAccount) {
+                                // Instead of showing the form, directly show the confirmation modal
+                                const recipient = document.getElementById('requesterAddress').textContent;
+                                const amountText = document.getElementById('requestedAmount').textContent;
+                                const amount = parseFloat(amountText.replace(' ETH', ''));
+                                const note = document.getElementById('requestNote').textContent;
+                                
+                                // Populate confirmation modal
+                                confirmRecipient.textContent = recipient;
+                                confirmAmount.textContent = amount + " ETH";
+                                confirmNote.textContent = note !== 'No note provided' ? note : 'No note added';
+                                
+                                // Show confirmation modal directly
+                                confirmationModal.style.display = "flex";
+                            } else {
+                                // Still not connected, show a more helpful message
+                                alert('Unable to connect to your wallet. Please make sure MetaMask is installed and unlocked.');
+                            }
+                        } catch (err) {
+                            console.error("Payment approval error:", err);
+                            alert("There was an error processing your payment request. Please try again.");
+                        } finally {
+                            // Re-enable the button
+                            approvePaymentBtn.disabled = false;
                         }
                     });
                     
@@ -1140,22 +1164,40 @@
                 }
             });
             
-            // Final confirmation button
+            // Replace the finalConfirmBtn event handler with this improved version
             finalConfirmBtn.addEventListener('click', async () => {
-                const success = await sendEth(
-                    confirmRecipient.textContent,
-                    parseFloat(confirmAmount.textContent),
-                    confirmNote.textContent
-                );
-                
+                // First hide the confirmation modal to prevent double-clicks
                 closeModals();
                 
-                if (success) {
-                    showSuccess();
-                    sendForm.style.display = 'none';
-                    sendTo.value = '';
-                    sendAmount.value = '';
-                    sendNote.value = '';
+                // Disable the button to prevent multiple clicks
+                finalConfirmBtn.disabled = true;
+                finalConfirmBtn.textContent = 'Processing...';
+                
+                try {
+                    // Extract the amount value correctly - remove " ETH" text
+                    const amountText = confirmAmount.textContent;
+                    const parsedAmount = parseFloat(amountText.replace(' ETH', ''));
+                    
+                    // Send the transaction
+                    const success = await sendEth(
+                        confirmRecipient.textContent,
+                        parsedAmount,
+                        confirmNote.textContent === 'No note added' ? '' : confirmNote.textContent
+                    );
+                    
+                    if (success) {
+                        showSuccess();
+                        sendForm.style.display = 'none';
+                        sendTo.value = '';
+                        sendAmount.value = '';
+                        sendNote.value = '';
+                    }
+                } catch (err) {
+                    showError("Transaction failed: " + (err.message || "Unknown error"));
+                } finally {
+                    // Re-enable the button and restore text
+                    finalConfirmBtn.disabled = false;
+                    finalConfirmBtn.textContent = 'Confirm & Send';
                 }
             });
             
