@@ -440,7 +440,7 @@
     </div>
 
     <div class="main-content">
-        <div id="status">Welcome to your Multi-Currency ETH Dashboard</div>
+        <div id="status">Welcome to glidePay.</div>
         
         <button id="connectBtn">Connect Wallet</button>
         
@@ -493,7 +493,7 @@
                 </div>
                 <div class="form-group">
                     <label for="requestNote">Add a Note (Optional)</label>
-                    <textarea id="requestNote" rows="3" placeholder="For our project expenses"></textarea>
+                    <textarea id="requestNote" rows="3" placeholder="Thanks for the help the other day!"></textarea>
                 </div>
                 
                 <div class="form-footer">
@@ -583,73 +583,6 @@
     <script>
         // Run immediately and also when DOM content is loaded
         const initApp = function() {
-
-            // Add this at the beginning of the initApp function
-            const attemptAutoConnect = async () => {
-                try {
-                    // Try to get accounts without showing the MetaMask popup
-                    let accounts;
-                    
-                    if (window.ethereum) {
-                        // This method doesn't trigger the MetaMask popup
-                        accounts = await window.ethereum.request({ method: 'eth_accounts' });
-                    } else if (window.web3 && window.web3.eth && window.web3.eth.accounts) {
-                        accounts = await new Promise((resolve) => {
-                            window.web3.eth.getAccounts((err, accts) => {
-                                resolve(accts || []);
-                            });
-                        });
-                    }
-                    
-                    if (accounts && accounts.length > 0) {
-                        const account = accounts[0];
-                        currentAccount = account;
-                        
-                        statusDiv.textContent = 'Connected to MetaMask';
-                        statusDiv.className = 'connected';
-                        accountInfo.style.display = 'block';
-                        accountAddress.textContent = account;
-                        connectBtn.style.display = 'none';
-                        
-                        // Get initial balance
-                        getBalance(account);
-                        
-                        // Setup account change listener
-                        if (window.ethereum) {
-                            window.ethereum.on('accountsChanged', function (accounts) {
-                                if (accounts.length === 0) {
-                                    // Disconnected
-                                    resetUI();
-                                } else {
-                                    // Account changed
-                                    const newAccount = accounts[0];
-                                    currentAccount = newAccount;
-                                    accountAddress.textContent = newAccount;
-                                    getBalance(newAccount);
-                                }
-                            });
-                        }
-                        
-                        return true; // Successfully auto-connected
-                    }
-                    
-                    return false; // No existing connection found
-                } catch (error) {
-                    console.error('Auto-connect error:', error);
-                    return false;
-                }
-            };
-            
-            // Try auto-connect immediately
-            attemptAutoConnect().then(connected => {
-                if (!connected) {
-                    // If auto-connect failed, display default message
-                    statusDiv.textContent = 'Click the button below to connect to MetaMask';
-                }
-            });
-            
-            // Keep the existing connect button functionality for manual connection
-            connectBtn.addEventListener('click', connectMetaMask);
             const connectBtn = document.getElementById('connectBtn');
             const refreshBtn = document.getElementById('refreshBtn');
             const statusDiv = document.getElementById('status');
@@ -814,7 +747,7 @@
                     
                     currencyBalanceDiv.textContent = formatter.format(currencyBalance);
                 } else {
-                    currencyBalanceDiv.textContent = 'Price data unavailable';
+                    currencyBalanceDiv.textContent = 'Current price data is unavailable.';
                 }
             };
             
@@ -965,7 +898,7 @@
             // Send ETH function
             const sendEth = async (recipient, amount, note) => {
                 if (!window.ethereum) {
-                    showError("MetaMask not found. Please install MetaMask to send ETH.");
+                    showError("MetaMask not found. Please install MetaMask.");
                     return false;
                 }
                 
