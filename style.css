@@ -49,17 +49,20 @@ body {
   box-shadow: 0 1px 3px var(--shadow-color);
 }
 
+.logo-link { /* Style for the logo link */
+    text-decoration: none;
+}
+
 .logo {
   font-size: 24px;
   font-weight: 700;
   color: var(--primary-color);
-  /* Removed margin-right */
 }
 
-/* Navigation Removed */
-
 .header-controls {
-  /* Removed margin-left: auto; */
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Space between buttons */
 }
 
 /* --- Status Banner --- */
@@ -76,16 +79,69 @@ body {
   color: #0d6a31;
 }
 
-.status-banner.disconnected {
+.status-banner.disconnected { /* Wallet disconnected */
+  background-color: #fff3cd; /* Yellowish */
+  border-color: #ffeeba;
+  color: #856404;
+}
+
+.status-banner.error { /* General errors, auth errors, metamask errors */
   background-color: #fdecea;
   border-color: #f8c1ba;
   color: #a32317;
 }
 
-.status-banner.info {
+.status-banner.info { /* Default, logged out, waiting for action */
   background-color: var(--primary-light);
   border-color: #b8d9f9;
   color: #004a99;
+}
+
+/* --- Auth Container --- */
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to top */
+    padding: 40px 20px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 400px; /* Limit width of auth card */
+}
+
+.auth-footer {
+    justify-content: space-between; /* Space out the buttons */
+}
+
+#toggleAuthModeBtn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 14px;
+    padding: 10px 0; /* Adjust padding */
+    cursor: pointer;
+}
+#toggleAuthModeBtn:hover {
+    text-decoration: underline;
+}
+
+#authSubmitBtn { /* Style like primary action buttons */
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    background-color: var(--primary-color);
+    color: var(--card-background);
+}
+#authSubmitBtn:hover:not(:disabled) {
+    background-color: var(--primary-dark);
+}
+
+#authError { /* Use the existing error message style */
+    margin-top: 10px;
+    margin-bottom: 0; /* Remove bottom margin if inside card body */
 }
 
 
@@ -104,6 +160,60 @@ body {
   flex-direction: column;
   gap: 24px; /* Space between cards */
 }
+
+/* --- Account Section --- */
+#accountSection {
+    /* Uses main-content grid, but likely only one column needed */
+    grid-template-columns: 1fr; /* Force single column */
+    max-width: 800px; /* Maybe narrower for account settings */
+}
+
+.account-section-card .card-body {
+    font-size: 15px;
+}
+.account-section-card .card-body p {
+    margin-bottom: 10px;
+}
+.account-section-card .card-body strong {
+    color: var(--text-secondary);
+}
+#accountEmail {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+#backToWalletBtn { /* Style like cancel button */
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 8px 14px; /* Slightly smaller */
+    font-size: 13px;
+    background-color: var(--card-background);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+#backToWalletBtn:hover:not(:disabled) {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    background-color: #f8f9fa;
+}
+
+/* Logout button within Account Section */
+.account-logout-btn {
+    font-weight: 500;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 14px;
+    background-color: var(--secondary-light); /* Match old header style */
+    color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    margin-top: 20px; /* Add space above */
+    display: inline-block; /* Allow margin-top */
+}
+.account-logout-btn:hover:not(:disabled) {
+    background-color: #cfd5e1; /* Slightly darker gray */
+    color: var(--text-primary);
+    border-color: var(--secondary-light);
+}
+
 
 /* --- Card Styling --- */
 .card {
@@ -411,6 +521,8 @@ body {
 
 .form-group input[type="text"],
 .form-group input[type="number"],
+.form-group input[type="email"], /* Add email */
+.form-group input[type="password"], /* Add password */
 .form-group textarea {
   width: 100%;
   padding: 10px 12px;
@@ -424,6 +536,8 @@ body {
 
 .form-group input[type="text"]:focus,
 .form-group input[type="number"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="password"]:focus,
 .form-group textarea:focus {
   outline: none;
   border-color: var(--primary-color);
@@ -471,8 +585,8 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Header Connect Button */
-#connectBtn {
+/* Header Buttons (Connect, Account) */
+#connectBtn, #accountBtn {
   font-weight: 600;
   border-radius: 20px; /* More rounded */
   padding: 8px 20px;
@@ -481,11 +595,14 @@ button:disabled {
   background-color: var(--primary-color);
   color: var(--card-background);
 }
-#connectBtn:hover:not(:disabled) {
+#connectBtn:hover:not(:disabled),
+#accountBtn:hover:not(:disabled) {
   background-color: var(--primary-dark);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-#connectBtn.disconnect-state {
+
+/* Specific states/styles */
+#connectBtn.disconnect-state { /* Wallet disconnect state */
   background-color: var(--card-background);
   color: var(--primary-color);
   border: 1px solid var(--border-color);
@@ -494,6 +611,13 @@ button:disabled {
   border-color: var(--primary-color);
   background-color: #f5f7fa;
 }
+
+/* Removed #logoutBtn header styles */
+
+#accountBtn { /* Account button style (similar to connect) */
+   /* Uses default primary style */
+}
+
 
 /* Form Buttons */
 #confirmSendBtn, #finalConfirmBtn, #approvePaymentBtn, #copyRequestLinkBtn {
@@ -723,7 +847,7 @@ button:disabled {
     .header {
         padding: 0 16px;
     }
-    .main-content {
+    .main-content, #accountSection {
         padding: 16px;
     }
 }
@@ -731,6 +855,13 @@ button:disabled {
 @media (max-width: 768px) {
     .header {
         /* Keep header simple */
+    }
+    .header-controls {
+        gap: 8px; /* Reduce gap */
+    }
+    #connectBtn, #accountBtn { /* Removed logoutBtn */
+        padding: 6px 12px; /* Smaller buttons */
+        font-size: 13px;
     }
 
     .balance-amount {
@@ -750,4 +881,8 @@ button:disabled {
 
     .modal-content { max-width: 95%; }
     .modal-header, .modal-body, .modal .form-footer { padding: 16px; }
+
+    .auth-card {
+        max-width: 90%;
+    }
 }

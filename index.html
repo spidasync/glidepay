@@ -3,23 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>glidePay - Wallet</title> <!-- Updated Title -->
+    <title>glidePay - Wallet</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Consider adding a favicon -->
     <!-- <link rel="icon" href="/favicon.ico" type="image/x-icon"> -->
 </head>
 <body>
     <header class="header">
-        <div class="logo">glidePay</div> <!-- Updated Logo -->
-        <!-- Navigation Removed -->
+        <a href="/" class="logo-link"><div class="logo">glidePay</div></a>
         <div class="header-controls">
-            <button id="connectBtn">Connect Wallet</button>
+            <!-- Account button - shown when logged in -->
+            <button id="accountBtn" class="hidden">Account</button>
+            <!-- Connect/Disconnect Wallet button -->
+            <button id="connectBtn" class="hidden">Connect Wallet</button>
+            <!-- Logout button moved to Account Section -->
         </div>
     </header>
 
-    <div id="status" class="info status-banner">Welcome to your ETH Dashboard</div>
+    <div id="status" class="info status-banner">Welcome to glidePay</div>
 
-    <main class="main-content hidden" id="dashboardContent"> <!-- Hide main content until connected -->
+    <!-- Login/Signup Form (Initially Visible) -->
+    <div id="authContainer" class="auth-container">
+        <div class="card auth-card">
+            <div class="card-header">
+                <span class="card-title" id="authTitle">Login or Sign Up</span>
+            </div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <div id="authError" class="error-message hidden"></div>
+            </div>
+            <div class="form-footer auth-footer">
+                 <button id="toggleAuthModeBtn">Need an account? Sign Up</button>
+                 <button id="authSubmitBtn">Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Wallet Dashboard (Hidden until Firebase login AND Wallet connect) -->
+    <main class="main-content hidden" id="dashboardContent">
         <div class="left-column">
             <!-- Current Balance Card -->
             <div class="card balance-card">
@@ -32,7 +59,6 @@
                 <div class="card-body">
                     <div id="currency-balance" class="balance-amount currency-balance">-</div>
                     <div id="currency-code" class="balance-secondary">USD</div>
-                    <!-- Removed Swap/Bridge buttons from screenshot -->
                 </div>
             </div>
 
@@ -59,14 +85,12 @@
                  </div>
                  <div class="card-body">
                      <div class="account-detail-item">
-                         <!-- Icon placeholder -->
                          <span class="account-icon">👤</span>
                          <div class="account-info">
                              <div class="account-label">Connected Wallet</div>
                              <div class="address-container">
                                  <span id="accountAddress" class="address"></span>
                                  <button id="copyAddressBtn" class="icon-button copy-button" aria-label="Copy Address">
-                                     <!-- SVG Copy Icon -->
                                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
                                        <path d="M7 3.5A1.5 1.5 0 0 1 8.5 2h3.879a1.5 1.5 0 0 1 1.06.44l3.122 3.121A1.5 1.5 0 0 1 17 6.621V16.5a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 16.5v-13Z" />
                                        <path d="M4.5 6A1.5 1.5 0 0 0 3 7.5v9A1.5 1.5 0 0 0 4.5 18h7a1.5 1.5 0 0 0 1.5-1.5v-1.121A2.998 2.998 0 0 1 11.879 15H8.5A1.5 1.5 0 0 1 7 13.5V9.621a3 3 0 0 1-1.06-.44L4.5 7.743V6Z" />
@@ -77,7 +101,6 @@
                          </div>
                      </div>
                      <div class="account-detail-item">
-                         <!-- Icon placeholder -->
                          <span class="account-icon">💰</span>
                          <div class="account-info">
                              <div class="account-label">Native ETH Tokens</div>
@@ -159,6 +182,22 @@
             </div>
         </div>
     </main>
+
+    <!-- Account Section (Hidden until Account button clicked) -->
+    <section id="accountSection" class="main-content hidden">
+        <div class="card account-section-card">
+            <div class="card-header">
+                <span class="card-title">Account Information</span>
+                <button id="backToWalletBtn" class="cancel-btn">Back to Wallet</button>
+            </div>
+            <div class="card-body">
+                <p><strong>Email:</strong> <span id="accountEmail"></span></p>
+                <p>Manage your account settings here.</p>
+                <!-- Removed placeholder comment -->
+                <button id="logoutBtn" class="account-logout-btn">Logout</button> <!-- Moved Logout Button Here -->
+            </div>
+        </div>
+    </section>
 
     <!-- Transaction Confirmation Modal -->
     <div id="confirmationModal" class="modal">

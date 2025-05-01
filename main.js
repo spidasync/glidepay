@@ -1,22 +1,47 @@
+import { auth } from './firebase.js'; // Import Firebase auth instance
+import {
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+} from "firebase/auth";
+
 // Run immediately and also when DOM content is loaded
 const initApp = function() {
     // --- DOM Element Selectors ---
-    const connectBtn = document.getElementById('connectBtn');
     const statusDiv = document.getElementById('status');
-    const dashboardContent = document.getElementById('dashboardContent'); // Main content area
+
+    // Auth elements
+    const authContainer = document.getElementById('authContainer');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const authSubmitBtn = document.getElementById('authSubmitBtn');
+    const toggleAuthModeBtn = document.getElementById('toggleAuthModeBtn');
+    const authError = document.getElementById('authError');
+    const authTitle = document.getElementById('authTitle');
+    const logoutBtn = document.getElementById('logoutBtn'); // Still selected by ID
+
+    // Header buttons
+    const accountBtn = document.getElementById('accountBtn');
+    const connectBtn = document.getElementById('connectBtn'); // Wallet connect button
+
+    // Main content areas
+    const dashboardContent = document.getElementById('dashboardContent'); // Wallet dashboard
+    const accountSection = document.getElementById('accountSection'); // Account info section
+    const backToWalletBtn = document.getElementById('backToWalletBtn');
+    const accountEmailSpan = document.getElementById('accountEmail');
 
     // Balance elements
-    const ethBalanceDiv = document.getElementById('eth-balance'); // Now in Account Details
-    const currencyBalanceDiv = document.getElementById('currency-balance'); // Main balance display
-    const currencyCodeDiv = document.getElementById('currency-code'); // Below main balance
-    // const currencySelect = document.getElementById('currency-select'); // Removed
-    const toggleBalanceBtn = document.getElementById('toggleBalanceBtn'); // Single toggle button
+    const ethBalanceDiv = document.getElementById('eth-balance');
+    const currencyBalanceDiv = document.getElementById('currency-balance');
+    const currencyCodeDiv = document.getElementById('currency-code');
+    const toggleBalanceBtn = document.getElementById('toggleBalanceBtn');
 
-    // Account Details elements
-    const accountInfoSection = document.querySelector('.account-details-card'); // Container for details
+    // Account Details elements (Wallet)
+    const accountInfoSection = document.querySelector('.account-details-card');
     const accountAddressSpan = document.getElementById('accountAddress');
     const copyAddressBtn = document.getElementById('copyAddressBtn');
-    const copyAddressTooltip = copyAddressBtn?.querySelector('.copy-tooltip'); // Add null check
+    const copyAddressTooltip = copyAddressBtn?.querySelector('.copy-tooltip');
 
     // Transaction elements
     const sendBtn = document.getElementById('sendBtn');
@@ -35,7 +60,7 @@ const initApp = function() {
     const paymentRequestModal = document.getElementById('paymentRequestModal');
     const confirmRecipient = document.getElementById('confirmRecipient');
     const confirmAmount = document.getElementById('confirmAmount');
-    const confirmGas = document.getElementById('confirmGas'); // Added gas estimate display
+    const confirmGas = document.getElementById('confirmGas');
     const confirmNote = document.getElementById('confirmNote');
     const finalConfirmBtn = document.getElementById('finalConfirmBtn');
     const cancelConfirmBtn = document.getElementById('cancelConfirmBtn');
@@ -46,7 +71,6 @@ const initApp = function() {
     const etherscanLinkContainer = document.getElementById('etherscanLinkContainer');
     const etherscanLink = document.getElementById('etherscanLink');
 
-
     // Form inputs
     const sendTo = document.getElementById('sendTo');
     const sendAmount = document.getElementById('sendAmount');
@@ -54,7 +78,7 @@ const initApp = function() {
     const requestMyAddress = document.getElementById('requestMyAddress');
     const requestAmount = document.getElementById('requestAmount');
     const requestNoteInput = document.getElementById('requestNote');
-    const sendError = document.getElementById('sendError');
+    const sendError = document.getElementById('sendError'); // Wallet send error
 
     // Payment Request Modal Display Fields
     const requesterAddressEl = document.getElementById('requesterAddress');
@@ -64,14 +88,16 @@ const initApp = function() {
     // --- State Variables ---
     let currentEthBalance = 0;
     let currentFiatBalance = 0;
-    let currentAccount = null;
+    let currentAccount = null; // MetaMask account
+    let currentUser = null; // Firebase user
+    let isLoginMode = true; // For auth form
     let ethPriceData = {};
     let lastPriceFetchTime = 0;
     const PRICE_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-    let isBalanceVisible = true; // Single state for both balances
-    const transactions = []; // In-memory store
+    let isBalanceVisible = true;
+    const transactions = [];
 
-    // SVG Icons
+    // SVG Icons (Keep as they are)
     const eyeIconSVG = `
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
           <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
@@ -84,9 +110,7 @@ const initApp = function() {
           <path d="m12.141 12.14-4.282-4.282a.75.75 0 1 0-1.06 1.06l4.282 4.282a.75.75 0 1 0 1.06-1.06Z" />
         </svg>`;
 
-
     // --- Helper Functions ---
-
     const showElement = (el) => el?.classList.remove('hidden');
     const hideElement = (el) => el?.classList.add('hidden');
 
@@ -114,7 +138,7 @@ const initApp = function() {
         if (statusDiv) {
             statusDiv.textContent = message;
             statusDiv.className = 'status-banner'; // Reset classes
-            statusDiv.classList.add(type); // Add type class (info, connected, disconnected)
+            statusDiv.classList.add(type); // Add type class (info, connected, disconnected, error)
         }
     };
 
@@ -138,38 +162,33 @@ const initApp = function() {
         }
     };
 
-    // Update Balance Display (Handles visibility toggle for BOTH balances)
     const updateBalanceDisplay = () => {
-        const selectedCurrency = 'USD'; // Hardcoded as selector removed
+        const selectedCurrency = 'USD';
         if (currencyCodeDiv) currencyCodeDiv.textContent = selectedCurrency;
 
         if (isBalanceVisible) {
-            // Show actual balances
             if (currencyBalanceDiv) currencyBalanceDiv.textContent = formatCurrency(currentFiatBalance, selectedCurrency);
             if (ethBalanceDiv) ethBalanceDiv.textContent = formatEth(currentEthBalance);
-            if (toggleBalanceBtn) toggleBalanceBtn.innerHTML = eyeSlashIconSVG; // Show hide icon
+            if (toggleBalanceBtn) toggleBalanceBtn.innerHTML = eyeSlashIconSVG;
         } else {
-            // Show masked balances
-            if (currencyBalanceDiv) currencyBalanceDiv.textContent = formatCurrency(0, selectedCurrency).replace(/[\d.,]/g, '*'); // Mask currency
+            if (currencyBalanceDiv) currencyBalanceDiv.textContent = formatCurrency(0, selectedCurrency).replace(/[\d.,]/g, '*');
             if (ethBalanceDiv) ethBalanceDiv.textContent = '**** ETH';
-            if (toggleBalanceBtn) toggleBalanceBtn.innerHTML = eyeIconSVG; // Show view icon
+            if (toggleBalanceBtn) toggleBalanceBtn.innerHTML = eyeIconSVG;
         }
     };
 
-    // Toggle Balance Visibility (Single Toggle)
     const toggleBalanceVisibility = () => {
         isBalanceVisible = !isBalanceVisible;
         updateBalanceDisplay();
     };
 
-    // Copy text to clipboard (Generic helper)
     const copyToClipboard = async (text, elementToUpdate, tooltipElement) => {
-        if (!tooltipElement) return; // Guard against missing tooltip
+        if (!tooltipElement) return;
         const originalText = tooltipElement.textContent;
         try {
             await navigator.clipboard.writeText(text);
             tooltipElement.textContent = "Copied!";
-            if (elementToUpdate) elementToUpdate.classList.add('copied'); // Add class for visual feedback
+            if (elementToUpdate) elementToUpdate.classList.add('copied');
             console.log("Copied:", text);
         } catch (err) {
             console.error('Clipboard copy failed:', err);
@@ -179,27 +198,19 @@ const initApp = function() {
             setTimeout(() => {
                 tooltipElement.textContent = originalText;
                 if (elementToUpdate) elementToUpdate.classList.remove('copied');
-            }, 1500); // Reset after 1.5 seconds
+            }, 1500);
         }
     };
 
-    // --- Transaction History ---
-
+    // --- Transaction History --- (Keep as is)
     const addTransaction = (type, recipient, amount, note, status = 'completed', txHash = null) => {
         const transaction = {
             id: Date.now().toString() + Math.random().toString(16).slice(2),
-            type, // 'send', 'receive', 'request'
-            recipient, // Address or identifier
-            amount, // ETH amount as string
-            note,
-            status, // 'completed', 'pending', 'submitted', 'failed'
-            timestamp: new Date(),
-            txHash
+            type, recipient, amount, note, status, timestamp: new Date(), txHash
         };
         transactions.unshift(transaction);
         if (transactions.length > 20) transactions.pop();
         updateTransactionList();
-        // TODO: Persist transactions
         return transaction;
     };
 
@@ -221,31 +232,24 @@ const initApp = function() {
         transactions.forEach(tx => {
             const item = document.createElement('div');
             item.className = 'transaction-item';
-
             let typeText = tx.type;
-            let amountClass = tx.type; // Use type for class (sent, received, pending)
+            let amountClass = tx.type;
             let subject = tx.note || (tx.type === 'send' ? 'Payment Sent' : tx.type === 'receive' ? 'Payment Received' : 'Request');
             let displayAddress = tx.recipient;
 
-            // Shorten address for display in list
             if (displayAddress && displayAddress.startsWith('0x') && displayAddress.length > 10) {
                  displayAddress = `${displayAddress.substring(0, 6)}...${displayAddress.substring(displayAddress.length - 4)}`;
             } else if (displayAddress === 'Link Generated') {
-                displayAddress = '-'; // Don't show address for generated links
+                displayAddress = '-';
             }
 
-            // Adjust subject/type display based on context
              if (tx.type === 'request' && tx.recipient === 'Link Generated') {
-                subject = 'Payment Link Created';
-                typeText = 'Request';
+                subject = 'Payment Link Created'; typeText = 'Request';
             } else if (tx.type === 'send') {
-                subject = tx.note || `To: ${displayAddress}`;
-                typeText = 'Send';
+                subject = tx.note || `To: ${displayAddress}`; typeText = 'Send';
             } else if (tx.type === 'receive') {
-                 subject = tx.note || `From: ${displayAddress}`;
-                 typeText = 'Receive';
+                 subject = tx.note || `From: ${displayAddress}`; typeText = 'Receive';
             }
-
 
             item.innerHTML = `
                 <div class="transaction-details">
@@ -257,14 +261,11 @@ const initApp = function() {
                     ${tx.amount} ETH
                 </div>
             `;
-            // TODO: Add link to Etherscan using tx.txHash if available
-
             transactionList.appendChild(item);
         });
     };
 
-    // --- API & Blockchain Interaction ---
-
+    // --- API & Blockchain Interaction --- (Keep mostly as is)
     const fetchEthPrice = async (currency) => {
         const now = Date.now();
         const cachedPrice = ethPriceData[currency];
@@ -273,16 +274,9 @@ const initApp = function() {
         }
         console.log(`Fetching ETH price for ${currency}...`);
         try {
-            // Using a simpler API endpoint if CoinGecko causes issues, fallback needed
-            // const response = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=${currency.toUpperCase()}`);
              const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=${currency.toLowerCase()}`);
-
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-
-            // Adjust parsing based on the API used
-            // For CryptoCompare: const price = data[currency.toUpperCase()];
-            // For CoinGecko:
             const price = data?.ethereum?.[currency.toLowerCase()];
 
             if (price) {
@@ -295,20 +289,20 @@ const initApp = function() {
             }
         } catch (error) {
             console.error('Error fetching ETH price:', error);
-            updateStatus('Unable to fetch price data', 'disconnected');
+            updateStatus('Unable to fetch price data', 'error'); // Use 'error' type
             return ethPriceData[currency] || null;
         }
     };
 
     const updateCurrencyBalance = async () => {
-        const selectedCurrency = 'USD'; // Hardcoded as selector removed
+        const selectedCurrency = 'USD';
         const ethPrice = await fetchEthPrice(selectedCurrency);
         if (ethPrice !== null) {
             currentFiatBalance = currentEthBalance * ethPrice;
         } else {
-            currentFiatBalance = 0; // Indicate price unavailable
+            currentFiatBalance = 0;
         }
-        updateBalanceDisplay(); // Update UI
+        updateBalanceDisplay();
     };
 
     const getBalance = async (account) => {
@@ -319,50 +313,42 @@ const initApp = function() {
             const ethBalance = parseInt(balanceWei, 16) / 1e18;
             currentEthBalance = ethBalance;
             console.log("Balance updated:", ethBalance, "ETH");
-            await updateCurrencyBalance(); // Update fiat value after getting ETH
+            await updateCurrencyBalance();
         } catch (error) {
             console.error('Balance error:', error);
             currentEthBalance = 0;
             currentFiatBalance = 0;
             updateBalanceDisplay();
-            updateStatus('Error fetching balance', 'disconnected');
+            updateStatus('Error fetching balance', 'error'); // Use 'error' type
         }
     };
 
-    // Estimate Gas (Basic Example)
     const estimateGas = async (transactionParams) => {
          if (!window.ethereum || !currentAccount) return null;
          try {
              const gasPriceWei = await window.ethereum.request({ method: 'eth_gasPrice' });
              const gasLimitWei = await window.ethereum.request({ method: 'eth_estimateGas', params: [transactionParams] });
-
              const gasPriceGwei = parseInt(gasPriceWei, 16) / 1e9;
              const gasLimit = parseInt(gasLimitWei, 16);
              const estimatedCostWei = BigInt(gasLimit) * BigInt(gasPriceWei);
              const estimatedCostEth = Number(estimatedCostWei) / 1e18;
-
              console.log(`Est. Gas - Limit: ${gasLimit}, Price: ${gasPriceGwei.toFixed(2)} Gwei, Cost: ${estimatedCostEth.toFixed(6)} ETH`);
-             return {
-                 limit: gasLimit,
-                 priceGwei: gasPriceGwei.toFixed(2),
-                 costEth: estimatedCostEth.toFixed(6)
-             };
+             return { limit: gasLimit, priceGwei: gasPriceGwei.toFixed(2), costEth: estimatedCostEth.toFixed(6) };
          } catch (error) {
              console.error("Gas estimation error:", error);
              return null;
          }
     };
 
-
     const sendEth = async (recipient, amountString, note) => {
         if (!window.ethereum || !currentAccount) {
-            showError("MetaMask not connected.");
+            showWalletError("MetaMask not connected.");
             return { success: false, txHash: null };
         }
         try {
             const amount = parseFloat(amountString);
             if (isNaN(amount) || amount <= 0) {
-                showError("Invalid amount."); return { success: false, txHash: null };
+                showWalletError("Invalid amount."); return { success: false, txHash: null };
             }
             const amountWei = '0x' + (BigInt(Math.round(amount * 1e18))).toString(16);
             const transactionParameters = { to: recipient, from: currentAccount, value: amountWei };
@@ -375,9 +361,9 @@ const initApp = function() {
             updateStatus('Transaction submitted!', 'connected');
 
             addTransaction('send', recipient, amount.toString(), note, 'submitted', txHash);
-            showSuccess(txHash); // Show success modal with hash
+            showSuccess(txHash);
 
-            setTimeout(() => { if (currentAccount) getBalance(currentAccount); }, 5000); // Refresh balance later
+            setTimeout(() => { if (currentAccount) getBalance(currentAccount); }, 5000);
 
             return { success: true, txHash: txHash };
         } catch (error) {
@@ -387,61 +373,130 @@ const initApp = function() {
             else if (error.message?.includes("insufficient funds")) message = "Insufficient funds.";
             else message = error.message?.split(/[\(\[]/)[0].trim() || message;
 
-            showError(message);
-            updateStatus(message, 'disconnected');
+            showWalletError(message);
+            updateStatus(message, 'error'); // Use 'error' type
             return { success: false, txHash: null };
         }
     };
 
+    // --- Firebase Auth Functions ---
+    const showAuthError = (message) => {
+        if (authError) {
+            authError.textContent = message;
+            showElement(authError);
+        }
+    };
+
+    const handleAuthSubmit = async () => {
+        hideElement(authError);
+        const email = emailInput?.value;
+        const password = passwordInput?.value;
+        if (!email || !password) {
+            showAuthError("Please enter both email and password.");
+            return;
+        }
+
+        authSubmitBtn.disabled = true;
+        authSubmitBtn.textContent = 'Processing...';
+
+        try {
+            if (isLoginMode) {
+                await signInWithEmailAndPassword(auth, email, password);
+                console.log("User logged in");
+                // onAuthStateChanged will handle UI updates
+            } else {
+                await createUserWithEmailAndPassword(auth, email, password);
+                console.log("User signed up");
+                // onAuthStateChanged will handle UI updates
+            }
+        } catch (error) {
+            console.error("Firebase Auth Error:", error);
+            showAuthError(error.message); // Show Firebase error message
+        } finally {
+            authSubmitBtn.disabled = false;
+            authSubmitBtn.textContent = isLoginMode ? 'Login' : 'Sign Up';
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await signOut(auth);
+            console.log("User logged out");
+            // onAuthStateChanged will handle UI reset
+        } catch (error) {
+            console.error("Logout Error:", error);
+            updateStatus("Error logging out.", "error");
+        }
+    };
+
+    const toggleAuthMode = () => {
+        isLoginMode = !isLoginMode;
+        hideElement(authError); // Clear errors
+        if (authTitle) authTitle.textContent = isLoginMode ? 'Login' : 'Sign Up';
+        if (authSubmitBtn) authSubmitBtn.textContent = isLoginMode ? 'Login' : 'Sign Up';
+        if (toggleAuthModeBtn) toggleAuthModeBtn.textContent = isLoginMode ? 'Need an account? Sign Up' : 'Have an account? Login';
+    };
+
     // --- UI Interaction & Logic ---
 
+    // Wallet Connect/Disconnect (Now checks Firebase auth)
     const handleConnectClick = async () => {
-        if (currentAccount) {
-            console.log("Disconnecting (resetting UI)...");
-            resetUI();
+        if (!currentUser) {
+            updateStatus('Please log in with Firebase first.', 'info');
+            // Optionally, briefly show the login form again or highlight it
+            return;
+        }
+
+        if (currentAccount) { // Disconnect Wallet
+            console.log("Disconnecting wallet...");
+            resetWalletUI(); // Only reset wallet part
             updateStatus('Wallet disconnected.', 'info');
-        } else {
+            showElement(connectBtn); // Ensure connect button is visible again
+            hideElement(dashboardContent); // Hide dashboard
+        } else { // Connect Wallet
             updateStatus('Connecting to MetaMask...', 'info');
             if (typeof window.ethereum === 'undefined') {
-                updateStatus('MetaMask not detected. Install extension.', 'disconnected');
+                updateStatus('MetaMask not detected. Install extension.', 'error');
                 return;
             }
             try {
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                handleAccountsChanged(accounts);
+                handleAccountsChanged(accounts); // Handles wallet connection UI
             } catch (err) {
                 console.error('Error requesting accounts:', err);
-                updateStatus(err.code === 4001 ? 'Connection rejected.' : 'Error connecting.', 'disconnected');
-                resetUI();
+                updateStatus(err.code === 4001 ? 'Wallet connection rejected.' : 'Error connecting wallet.', 'error');
+                resetWalletUI();
             }
         }
     };
 
+    // Wallet Account Change Handler (Keep as is, but called after Firebase login)
     const handleAccountsChanged = async (accounts) => {
         if (accounts && accounts.length > 0) {
             const newAccount = accounts[0];
             if (newAccount !== currentAccount) {
-                console.log('Account changed/connected:', newAccount);
+                console.log('Wallet account changed/connected:', newAccount);
                 currentAccount = newAccount;
-                updateStatus('Connected', 'connected');
-                showElement(dashboardContent); // Show main content
-                if (accountAddressSpan) accountAddressSpan.textContent = newAccount; // Show full address
+                updateStatus('Wallet connected', 'connected');
+                showElement(dashboardContent); // Show wallet dashboard
+                hideElement(accountSection); // Ensure account section is hidden
+                if (accountAddressSpan) accountAddressSpan.textContent = newAccount;
                 if (accountAddressSpan) accountAddressSpan.title = newAccount;
-                if (connectBtn) connectBtn.textContent = 'Disconnect';
+                if (connectBtn) connectBtn.textContent = 'Disconnect Wallet';
                 if (connectBtn) connectBtn.classList.add('disconnect-state');
                 await getBalance(newAccount);
                 hideAllForms();
-                transactions.length = 0; // Clear transactions for new account
+                transactions.length = 0;
                 updateTransactionList();
                 setupMetaMaskListeners();
-                checkURLParameters(); // Check for payment requests
+                checkURLParameters();
             } else {
-                 if (currentAccount) await getBalance(currentAccount); // Refresh balance if same account
+                 if (currentAccount) await getBalance(currentAccount);
             }
         } else {
             console.log('MetaMask disconnected or locked.');
             updateStatus('MetaMask disconnected. Please connect.', 'disconnected');
-            resetUI();
+            resetWalletUI(); // Reset only wallet UI part
         }
     };
 
@@ -449,24 +504,58 @@ const initApp = function() {
         if (window.ethereum) {
             window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
             window.ethereum.on('accountsChanged', handleAccountsChanged);
-            // window.ethereum.on('chainChanged', (chainId) => window.location.reload());
         }
     };
 
-    const resetUI = () => {
-        updateStatus('Please connect your wallet', 'info');
-        hideElement(dashboardContent); // Hide main content
+    // Reset only the Wallet-specific UI parts
+    const resetWalletUI = () => {
+        hideElement(dashboardContent); // Hide wallet dashboard
         currentEthBalance = 0;
         currentFiatBalance = 0;
         currentAccount = null;
-        updateBalanceDisplay(); // Update displays to show 0/placeholders
+        updateBalanceDisplay();
         hideAllForms();
         transactions.length = 0;
         updateTransactionList();
         if (connectBtn) connectBtn.textContent = 'Connect Wallet';
         if (connectBtn) connectBtn.classList.remove('disconnect-state');
-        if (accountAddressSpan) accountAddressSpan.textContent = ''; // Clear address display
+        if (accountAddressSpan) accountAddressSpan.textContent = '';
+        // Don't change the main status if the user is still logged in via Firebase
+        if (currentUser) {
+            updateStatus('Wallet disconnected. Connect to proceed.', 'info');
+            showElement(connectBtn); // Show connect button if logged in but wallet disconnected
+        } else {
+            updateStatus('Please log in or sign up.', 'info'); // Should not happen if called correctly
+        }
     };
+
+    // Reset the entire application UI (e.g., on Firebase logout)
+    const resetAppUI = () => {
+        updateStatus('Please log in or sign up.', 'info');
+        hideElement(dashboardContent);
+        hideElement(accountSection);
+        hideElement(connectBtn);
+        hideElement(logoutBtn); // Hide logout button (now in account section)
+        hideElement(accountBtn);
+        showElement(authContainer); // Show login form
+        currentEthBalance = 0;
+        currentFiatBalance = 0;
+        currentAccount = null;
+        currentUser = null;
+        updateBalanceDisplay();
+        hideAllForms();
+        transactions.length = 0;
+        updateTransactionList();
+        if (connectBtn) connectBtn.textContent = 'Connect Wallet';
+        if (connectBtn) connectBtn.classList.remove('disconnect-state');
+        if (accountAddressSpan) accountAddressSpan.textContent = '';
+        if (accountEmailSpan) accountEmailSpan.textContent = '';
+        // Remove MetaMask listeners if any were attached
+        if (window.ethereum) {
+            window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+        }
+    };
+
 
     const hideAllForms = () => {
         hideElement(sendForm);
@@ -480,7 +569,8 @@ const initApp = function() {
         hideElement(sendError);
     };
 
-    const showError = (message) => {
+    // Renamed to avoid conflict with authError
+    const showWalletError = (message) => {
         if (sendError) {
             sendError.textContent = message;
             showElement(sendError);
@@ -492,13 +582,13 @@ const initApp = function() {
         const recipient = sendTo?.value.trim();
         const amount = parseFloat(sendAmount?.value);
         if (!recipient || !/^0x[a-fA-F0-9]{40}$/.test(recipient)) {
-            showError("Invalid recipient address."); return false;
+            showWalletError("Invalid recipient address."); return false;
         }
         if (isNaN(amount) || amount <= 0) {
-            showError("Invalid amount."); return false;
+            showWalletError("Invalid amount."); return false;
         }
         if (amount > currentEthBalance) {
-            showError(`Insufficient balance (${formatEth(currentEthBalance)}).`); return false;
+            showWalletError(`Insufficient balance (${formatEth(currentEthBalance)}).`); return false;
         }
         return true;
     };
@@ -508,14 +598,12 @@ const initApp = function() {
         if (confirmRecipient) confirmRecipient.title = recipient;
         if (confirmAmount) confirmAmount.textContent = formatEth(parseFloat(amount));
         if (confirmNote) confirmNote.textContent = note || "No note provided";
-        if (confirmGas) confirmGas.textContent = "Calculating..."; // Reset gas estimate
+        if (confirmGas) confirmGas.textContent = "Calculating...";
 
         openModal(confirmationModal);
 
-        // Estimate gas after opening modal
         const transactionParams = {
-            to: recipient,
-            from: currentAccount,
+            to: recipient, from: currentAccount,
             value: '0x' + (BigInt(Math.round(parseFloat(amount) * 1e18))).toString(16)
         };
         const gasEstimate = await estimateGas(transactionParams);
@@ -530,7 +618,6 @@ const initApp = function() {
 
     const showSuccess = (txHash) => {
         if (txHash) {
-            // Construct Etherscan link (adjust for different networks if needed)
             const etherscanBaseUrl = 'https://etherscan.io/tx/';
             if (etherscanLink) etherscanLink.href = etherscanBaseUrl + txHash;
             showElement(etherscanLinkContainer);
@@ -539,7 +626,6 @@ const initApp = function() {
         }
         openModal(successModal);
     };
-
 
     const createRequestLink = (recipient, amount, note) => {
         if (!recipient) return null;
@@ -553,20 +639,41 @@ const initApp = function() {
     };
 
     const checkURLParameters = () => {
-        const urlParams = new URLSearchParams(window.location.search);
+        // Only process payment requests if logged in via Firebase AND wallet connected
+        if (!currentUser || !currentAccount) {
+            // Clear any pending request from storage if user logs out or disconnects wallet
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('action') === 'pay') {
+                 sessionStorage.setItem('pendingPaymentRequest', window.location.search); // Store the full search string
+                 window.history.replaceState({}, document.title, window.location.pathname); // Clear URL
+                 console.log("Payment request link detected, user needs to log in and connect wallet.");
+                 updateStatus("Login and connect wallet to handle the payment request.", "info");
+            }
+            return;
+        }
+
+        let searchString = window.location.search;
+        const pendingRequest = sessionStorage.getItem('pendingPaymentRequest');
+
+        if (!searchString && pendingRequest) {
+            searchString = pendingRequest; // Use stored request if URL is clean now
+            sessionStorage.removeItem('pendingPaymentRequest'); // Clear storage
+            // Optionally restore the query string to the URL for processing, then clear again
+            window.history.replaceState({}, document.title, `${window.location.pathname}${searchString}`);
+        } else if (searchString) {
+             sessionStorage.removeItem('pendingPaymentRequest'); // Clear storage if we have a new URL param
+        }
+
+
+        const urlParams = new URLSearchParams(searchString);
         if (urlParams.get('action') === 'pay') {
             const requester = urlParams.get('req');
             const amount = urlParams.get('amount');
             const note = urlParams.get('note') || 'No note provided';
-            window.history.replaceState({}, document.title, window.location.pathname); // Clear URL
+            window.history.replaceState({}, document.title, window.location.pathname); // Clear URL after processing
 
             if (requester && amount) {
                 console.log("Payment request link detected:", { requester, amount, note });
-                if (!currentAccount) {
-                    updateStatus('Connect wallet to respond to payment request.', 'info');
-                    sessionStorage.setItem('pendingPaymentRequest', JSON.stringify({ requester, amount, note }));
-                    return;
-                }
                 if (requesterAddressEl) requesterAddressEl.textContent = requester;
                 if (requesterAddressEl) requesterAddressEl.title = requester;
                 if (requestedAmountEl) requestedAmountEl.textContent = formatEth(parseFloat(amount));
@@ -575,95 +682,85 @@ const initApp = function() {
             } else {
                 console.log("Incomplete payment request parameters.");
             }
-        } else {
-            const pendingRequest = sessionStorage.getItem('pendingPaymentRequest');
-            if (pendingRequest && currentAccount) {
-                sessionStorage.removeItem('pendingPaymentRequest');
-                const { requester, amount, note } = JSON.parse(pendingRequest);
-                const params = new URLSearchParams();
-                params.set('action', 'pay'); params.set('req', requester); params.set('amount', amount);
-                if (note) params.set('note', note);
-                window.history.replaceState({}, document.title, `${window.location.pathname}?${params.toString()}`);
-                checkURLParameters(); // Re-trigger
-            }
         }
     };
 
+
     // --- Event Listeners Setup ---
 
-    if (connectBtn) {
-        connectBtn.addEventListener('click', handleConnectClick);
-    } else {
-        console.error("Connect button not found!");
-    }
+    // Firebase Auth Listeners
+    if (authSubmitBtn) authSubmitBtn.addEventListener('click', handleAuthSubmit);
+    if (toggleAuthModeBtn) toggleAuthModeBtn.addEventListener('click', toggleAuthMode);
+    if (logoutBtn) logoutBtn.addEventListener('click', handleLogout); // Listener remains the same
 
-    // Copy Address Button
-    if (copyAddressBtn) {
-        copyAddressBtn.addEventListener('click', () => {
-            if (currentAccount && copyAddressTooltip) { // Ensure tooltip exists
-                copyToClipboard(currentAccount, copyAddressBtn, copyAddressTooltip);
-            } else if (!copyAddressTooltip) {
-                console.error("Copy tooltip element not found!");
-                // Fallback or alternative feedback if tooltip is missing
-                if (currentAccount) {
-                    navigator.clipboard.writeText(currentAccount).then(() => {
-                        alert("Address copied!");
-                    }).catch(err => {
-                        alert("Failed to copy address.");
-                        console.error("Clipboard copy failed:", err);
-                    });
-                }
+    // Wallet Connect Listener
+    if (connectBtn) connectBtn.addEventListener('click', handleConnectClick);
+
+    // Account Section Navigation
+    if (accountBtn) {
+        accountBtn.addEventListener('click', () => {
+            hideElement(dashboardContent);
+            showElement(accountSection);
+            hideElement(accountBtn); // Hide account btn when in account view
+            showElement(backToWalletBtn); // Show back button
+            showElement(logoutBtn); // Show logout button when in account view
+            if (accountEmailSpan && currentUser) {
+                accountEmailSpan.textContent = currentUser.email;
             }
         });
-    } else {
-        console.error("Copy address button not found!");
+    }
+    if (backToWalletBtn) {
+        backToWalletBtn.addEventListener('click', () => {
+            hideElement(accountSection);
+            hideElement(logoutBtn); // Hide logout button when leaving account view
+            if (currentAccount) { // Only show dashboard if wallet is connected
+                 showElement(dashboardContent);
+            }
+            showElement(accountBtn); // Show account btn again
+            hideElement(backToWalletBtn);
+        });
+    }
+
+
+    // Copy Address Button (Wallet)
+    if (copyAddressBtn) {
+        copyAddressBtn.addEventListener('click', () => {
+            if (currentAccount && copyAddressTooltip) {
+                copyToClipboard(currentAccount, copyAddressBtn, copyAddressTooltip);
+            } else if (!copyAddressTooltip && currentAccount) {
+                navigator.clipboard.writeText(currentAccount).then(() => alert("Address copied!"))
+                         .catch(err => { alert("Failed to copy address."); console.error("Clipboard copy failed:", err); });
+            }
+        });
     }
 
     // Balance Toggle Button
     if (toggleBalanceBtn) {
         toggleBalanceBtn.addEventListener('click', toggleBalanceVisibility);
-        // Set initial icon state correctly
         toggleBalanceBtn.innerHTML = isBalanceVisible ? eyeSlashIconSVG : eyeIconSVG;
-    } else {
-        console.error("Toggle balance button not found!");
     }
 
     // Show Send/Request Forms
     if (sendBtn) {
         sendBtn.addEventListener('click', () => {
-            hideAllForms(); // Hide request form if open
+            hideAllForms();
             showElement(sendForm);
-            sendForm?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); // Scroll to form
+            sendForm?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
-    } else {
-        console.error("Send button not found!");
     }
-
     if (requestBtn) {
         requestBtn.addEventListener('click', () => {
-            if (!currentAccount) {
-                alert("Please connect your wallet first."); return;
-            }
-            hideAllForms(); // Hide send form if open
+            if (!currentAccount) { alert("Please connect your wallet first."); return; }
+            hideAllForms();
             if (requestMyAddress) requestMyAddress.value = currentAccount;
             showElement(requestForm);
-            requestForm?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); // Scroll to form
+            requestForm?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
-    } else {
-        console.error("Request button not found!");
     }
 
     // Cancel Buttons for Forms
-    if (cancelSendBtn) {
-        cancelSendBtn.addEventListener('click', hideAllForms);
-    } else {
-        console.error("Cancel Send button not found!");
-    }
-    if (cancelRequestBtn) {
-        cancelRequestBtn.addEventListener('click', hideAllForms);
-    } else {
-        console.error("Cancel Request button not found!");
-    }
+    if (cancelSendBtn) cancelSendBtn.addEventListener('click', hideAllForms);
+    if (cancelRequestBtn) cancelRequestBtn.addEventListener('click', hideAllForms);
 
     // Confirm Send Button (Opens Confirmation Modal)
     if (confirmSendBtn) {
@@ -672,8 +769,6 @@ const initApp = function() {
                 showConfirmation(sendTo.value.trim(), sendAmount.value, sendNote.value.trim());
             }
         });
-    } else {
-        console.error("Confirm Send button not found!");
     }
 
     // Final Confirm Button (Sends ETH)
@@ -688,13 +783,10 @@ const initApp = function() {
             closeModal(confirmationModal);
             const { success, txHash } = await sendEth(recipient, amount.toString(), note);
             if (success) {
-                // Success modal shown within sendEth
                 hideAllForms();
             }
             finalConfirmBtn.disabled = false; finalConfirmBtn.textContent = 'Confirm & Send';
         });
-    } else {
-        console.error("Final Confirm button not found!");
     }
 
     // Copy Request Link Button
@@ -711,32 +803,17 @@ const initApp = function() {
                     alert("Payment link copied to clipboard!");
                     addTransaction('request', 'Link Generated', reqAmount.toString(), reqNote, 'pending');
                  }).catch(err => {
-                    alert("Failed to copy link.");
-                    console.error("Copy link failed:", err);
+                    alert("Failed to copy link."); console.error("Copy link failed:", err);
                  });
             }
         });
-    } else {
-        console.error("Copy Request Link button not found!");
     }
 
     // Modal Close Buttons
     closeModalButtons.forEach(btn => btn.addEventListener('click', () => closeAllModals()));
-    if (cancelConfirmBtn) {
-        cancelConfirmBtn.addEventListener('click', () => closeModal(confirmationModal));
-    } else {
-        console.error("Cancel Confirm button not found!");
-    }
-    if (closeSuccessBtn) {
-        closeSuccessBtn.addEventListener('click', () => closeModal(successModal));
-    } else {
-        console.error("Close Success button not found!");
-    }
-    if (declinePaymentBtn) {
-        declinePaymentBtn.addEventListener('click', () => closeModal(paymentRequestModal));
-    } else {
-        console.error("Decline Payment button not found!");
-    }
+    if (cancelConfirmBtn) cancelConfirmBtn.addEventListener('click', () => closeModal(confirmationModal));
+    if (closeSuccessBtn) closeSuccessBtn.addEventListener('click', () => closeModal(successModal));
+    if (declinePaymentBtn) declinePaymentBtn.addEventListener('click', () => closeModal(paymentRequestModal));
 
     // Approve Payment Button (From Payment Request Modal)
     if (approvePaymentBtn) {
@@ -748,13 +825,10 @@ const initApp = function() {
             const paymentNote = (requestNoteDisplayEl?.textContent === 'No note provided' || !requestNoteDisplayEl?.textContent) ? '' : requestNoteDisplayEl.textContent;
 
             closeModal(paymentRequestModal);
-            // Show confirmation modal for the payment
             showConfirmation(recipient, requestedAmount.toString(), `Payment for request: ${paymentNote}`);
 
             approvePaymentBtn.disabled = false; approvePaymentBtn.textContent = 'Pay Now';
         });
-    } else {
-        console.error("Approve Payment button not found!");
     }
 
     // Close modals on outside click
@@ -764,29 +838,48 @@ const initApp = function() {
         }
     });
 
+    // --- Firebase Auth State Listener ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            // User is signed in
+            console.log("Auth state changed: User logged in", user.uid, user.email);
+            currentUser = user;
+            hideElement(authContainer);
+            // Don't show logout button in header anymore
+            showElement(accountBtn);
+            showElement(connectBtn); // Show connect wallet button now
+            updateStatus('Logged in. Please connect your wallet.', 'info');
+            // If wallet was already connected (e.g. page refresh), re-check
+            if (window.ethereum?.selectedAddress) {
+                 handleAccountsChanged([window.ethereum.selectedAddress]);
+            } else {
+                // Check for pending payment requests now that user is logged in
+                checkURLParameters();
+            }
+        } else {
+            // User is signed out
+            console.log("Auth state changed: User logged out");
+            currentUser = null;
+            resetAppUI(); // Reset the entire UI to the logged-out state
+        }
+    });
+
+
     // --- Initial Application Setup ---
     console.log("Initializing App...");
-    resetUI(); // Start in disconnected state
-    updateTransactionList(); // Show empty state
-    updateBalanceDisplay(); // Set initial icons/state (will also set eye icon initially)
+    // Initial state is logged-out, handled by onAuthStateChanged
+    resetAppUI(); // Start in logged-out state
+    updateTransactionList(); // Show empty state initially
+    updateBalanceDisplay(); // Set initial icons/state
 
-    // Attempt auto-reconnect
-    if (window.ethereum?.isMetaMask) {
-        window.ethereum.request({ method: 'eth_accounts' })
-            .then(handleAccountsChanged)
-            .catch(err => { console.error("Error checking initial accounts:", err); resetUI(); });
-    } else {
-        updateStatus('MetaMask not detected. Install extension.', 'disconnected');
-    }
+    // No auto-reconnect for wallet here, wait for Firebase login first.
+    // Firebase's onAuthStateChanged handles the initial check.
 
-    // Initial check for URL parameters
-    checkURLParameters();
 };
 
 // --- Run Initialization ---
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initApp);
 } else {
-    // DOMContentLoaded has already fired
     initApp();
 }
