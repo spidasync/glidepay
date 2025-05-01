@@ -17,6 +17,37 @@ body {
     color: var(--text-color);
 }
 
+/* Add these to your existing CSS */
+.balance-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.visibility-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s;
+}
+
+.visibility-toggle:hover {
+    opacity: 0.8;
+}
+
+.hidden-balance {
+    font-family: monospace;
+    letter-spacing: 2px;
+}
+
 .header {
     background-color: #fff;
     border-bottom: 1px solid var(--border-color);
