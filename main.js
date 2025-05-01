@@ -9,7 +9,7 @@ const initApp = function() {
     const ethBalanceDiv = document.getElementById('eth-balance'); // Now in Account Details
     const currencyBalanceDiv = document.getElementById('currency-balance'); // Main balance display
     const currencyCodeDiv = document.getElementById('currency-code'); // Below main balance
-    const currencySelect = document.getElementById('currency-select'); // Might be removed or relocated later
+    // const currencySelect = document.getElementById('currency-select'); // Removed
     const toggleBalanceBtn = document.getElementById('toggleBalanceBtn'); // Single toggle button
 
     // Account Details elements
@@ -73,12 +73,12 @@ const initApp = function() {
 
     // SVG Icons
     const eyeIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
           <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
           <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.18l.879-.879a1.65 1.65 0 0 0 1.415-.498l.879-.879a1.65 1.65 0 0 1 2.332-.001l.879.879a1.65 1.65 0 0 0 1.415.498l.879.879a1.65 1.65 0 0 1 2.332.001l.879-.879a1.65 1.65 0 0 0 1.415-.498l.879-.879a1.651 1.651 0 0 1 0 1.18l-.879.879a1.65 1.65 0 0 0-.498 1.415l.879.879a1.65 1.65 0 0 1 0 1.18l-.879.879a1.65 1.65 0 0 0 .498 1.415l.879.879a1.65 1.65 0 0 1-.001 2.332l-.879.879a1.65 1.65 0 0 0-.498 1.415l-.879.879a1.65 1.65 0 0 1-1.18 0l-.879-.879a1.65 1.65 0 0 0-1.415-.498l-.879-.879a1.65 1.65 0 0 1-2.332-.001l-.879.879a1.65 1.65 0 0 0-1.415.498l-.879.879a1.65 1.65 0 0 1-2.332.001l-.879-.879a1.65 1.65 0 0 0-1.415-.498l-.879-.879a1.651 1.651 0 0 1 0-1.18l.879-.879a1.65 1.65 0 0 0 .498-1.415l-.879-.879ZM10 15a5 5 0 1 0 0-10 5 5 0 0 0 0 10Z" clip-rule="evenodd" />
         </svg>`;
     const eyeSlashIconSVG = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
           <path d="M10.75 10.25a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0v-4.5Z" />
           <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 0 1 0-1.18l.879-.879a1.65 1.65 0 0 0 1.415-.498l.879-.879a1.65 1.65 0 0 1 2.332-.001l.879.879a1.65 1.65 0 0 0 1.415.498l.879.879a1.65 1.65 0 0 1 2.332.001l.879-.879a1.65 1.65 0 0 0 1.415-.498l.879-.879a1.651 1.651 0 0 1 0 1.18l-.879.879a1.65 1.65 0 0 0-.498 1.415l.879.879a1.65 1.65 0 0 1 0 1.18l-.879.879a1.65 1.65 0 0 0 .498 1.415l.879.879a1.65 1.65 0 0 1-.001 2.332l-.879.879a1.65 1.65 0 0 0-.498 1.415l-.879.879a1.65 1.65 0 0 1-1.18 0l-.879-.879a1.65 1.65 0 0 0-1.415-.498l-.879-.879a1.65 1.65 0 0 1-2.332-.001l-.879.879a1.65 1.65 0 0 0-1.415.498l-.879.879a1.65 1.65 0 0 1-2.332.001l-.879-.879a1.65 1.65 0 0 0-1.415-.498l-.879-.879a1.651 1.651 0 0 1 0-1.18l.879-.879a1.65 1.65 0 0 0 .498-1.415l-.879-.879ZM10 4a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z" clip-rule="evenodd" />
           <path d="m12.141 12.14-4.282-4.282a.75.75 0 1 0-1.06 1.06l4.282 4.282a.75.75 0 1 0 1.06-1.06Z" />
@@ -140,7 +140,7 @@ const initApp = function() {
 
     // Update Balance Display (Handles visibility toggle for BOTH balances)
     const updateBalanceDisplay = () => {
-        const selectedCurrency = currencySelect?.value || 'USD'; // Default to USD if selector removed/missing
+        const selectedCurrency = 'USD'; // Hardcoded as selector removed
         if (currencyCodeDiv) currencyCodeDiv.textContent = selectedCurrency;
 
         if (isBalanceVisible) {
@@ -301,7 +301,7 @@ const initApp = function() {
     };
 
     const updateCurrencyBalance = async () => {
-        const selectedCurrency = currencySelect?.value || 'USD'; // Default currency
+        const selectedCurrency = 'USD'; // Hardcoded as selector removed
         const ethPrice = await fetchEthPrice(selectedCurrency);
         if (ethPrice !== null) {
             currentFiatBalance = currentEthBalance * ethPrice;
@@ -620,10 +620,12 @@ const initApp = function() {
     }
 
     // Balance Toggle Button
-    if (toggleBalanceBtn) { // <<< FIX: Added null check here
+    if (toggleBalanceBtn) {
         toggleBalanceBtn.addEventListener('click', toggleBalanceVisibility);
+        // Set initial icon state correctly
+        toggleBalanceBtn.innerHTML = isBalanceVisible ? eyeSlashIconSVG : eyeIconSVG;
     } else {
-        console.error("Toggle balance button not found!"); // Log error if missing
+        console.error("Toggle balance button not found!");
     }
 
     // Show Send/Request Forms
@@ -766,7 +768,7 @@ const initApp = function() {
     console.log("Initializing App...");
     resetUI(); // Start in disconnected state
     updateTransactionList(); // Show empty state
-    updateBalanceDisplay(); // Set initial icons/state
+    updateBalanceDisplay(); // Set initial icons/state (will also set eye icon initially)
 
     // Attempt auto-reconnect
     if (window.ethereum?.isMetaMask) {

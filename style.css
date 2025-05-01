@@ -44,6 +44,7 @@ body {
   padding: 0 32px; /* Increased padding */
   display: flex;
   align-items: center; /* Align items vertically */
+  justify-content: space-between; /* Space between logo and controls */
   height: 65px; /* Fixed height */
   box-shadow: 0 1px 3px var(--shadow-color);
 }
@@ -52,41 +53,13 @@ body {
   font-size: 24px;
   font-weight: 700;
   color: var(--primary-color);
-  margin-right: 40px; /* Space after logo */
+  /* Removed margin-right */
 }
 
-.navigation {
-  display: flex;
-  height: 100%; /* Make nav take full header height */
-  flex-grow: 1; /* Allow nav to take available space */
-}
-
-.nav-link {
-  display: flex;
-  align-items: center; /* Center text vertically */
-  padding: 0 16px;
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-size: 15px;
-  font-weight: 500;
-  border-bottom: 3px solid transparent; /* Placeholder for active state */
-  transition: color 0.2s ease, border-color 0.2s ease;
-  height: 100%; /* Make link take full nav height */
-  margin-bottom: -1px; /* Overlap border bottom */
-}
-
-.nav-link:hover {
-  color: var(--text-primary);
-}
-
-.nav-link.active {
-  color: var(--primary-color);
-  border-bottom-color: var(--primary-color);
-  font-weight: 600;
-}
+/* Navigation Removed */
 
 .header-controls {
-  margin-left: auto; /* Push controls to the right */
+  /* Removed margin-left: auto; */
 }
 
 /* --- Status Banner --- */
@@ -190,14 +163,17 @@ body {
   padding: 4px;
   cursor: pointer;
   color: var(--text-secondary);
-  line-height: 0;
+  line-height: 0; /* Important for SVG alignment */
+  display: inline-flex; /* Helps contain the SVG */
+  align-items: center;
+  justify-content: center;
 }
 .balance-toggle-btn:hover {
   color: var(--text-primary);
 }
 .balance-toggle-btn svg {
   display: block;
-  width: 20px; /* Adjust icon size */
+  width: 20px; /* Ensure consistent icon size */
   height: 20px;
 }
 
@@ -406,7 +382,7 @@ body {
 .transaction-amount.received::before { content: '+ '; }
 
 .transaction-amount.pending {
-  color: var(--pending-orange);
+  color: var(--pending-orange); /* Define --pending-orange if needed */
 }
 .transaction-amount.pending::before { content: ''; } /* No prefix for pending */
 
@@ -747,13 +723,6 @@ button:disabled {
     .header {
         padding: 0 16px;
     }
-    .logo {
-        margin-right: 20px;
-    }
-    .nav-link {
-        padding: 0 10px;
-        font-size: 14px;
-    }
     .main-content {
         padding: 16px;
     }
@@ -761,26 +730,7 @@ button:disabled {
 
 @media (max-width: 768px) {
     .header {
-        flex-wrap: wrap; /* Allow wrapping */
-        height: auto;
-        padding-bottom: 10px;
-    }
-    .navigation {
-        order: 3; /* Move nav below logo/button */
-        width: 100%;
-        margin-top: 10px;
-        justify-content: space-around; /* Space out links */
-        height: 45px;
-    }
-    .nav-link {
-        padding: 0 5px;
-        font-size: 13px;
-    }
-    .header-controls {
-        order: 2; /* Keep button on the right */
-    }
-    .logo {
-        order: 1;
+        /* Keep header simple */
     }
 
     .balance-amount {
